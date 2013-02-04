@@ -1,3 +1,5 @@
+package com.poixson.pxnCommon.Metrics.Hidendra;
+
 /*
  * Copyright 2011-2013 Tyler Blair. All rights reserved.
  *
@@ -25,14 +27,6 @@
  * authors and contributors and should not be interpreted as representing official policies,
  * either expressed or implied, of anybody else.
  */
-package org.mcstats;
-
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,6 +46,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.scheduler.BukkitTask;
+
 /**
  * <p> The metrics class obtains data about a plugin and submits statistics about it to the metrics backend. </p> <p>
  * Public methods provided by this class: </p>
@@ -67,59 +68,85 @@ public class Metrics {
      * The current revision number
      */
     private final static int REVISION = 6;
+
     /**
      * The base url of the metrics domain
      */
     private static final String BASE_URL = "http://mcstats.org";
+
     /**
      * The url used to report a server's status
      */
     private static final String REPORT_URL = "/report/%s";
+
     /**
      * The separator to use for custom data. This MUST NOT change unless you are hosting your own version of metrics and
      * want to change it.
      */
     private static final String CUSTOM_DATA_SEPARATOR = "~~";
+
     /**
      * Interval of time to ping (in minutes)
      */
     private static final int PING_INTERVAL = 10;
+
     /**
      * The plugin this metrics submits for
      */
     private final Plugin plugin;
+
     /**
      * All of the custom graphs to submit to metrics
      */
     private final Set<Graph> graphs = Collections.synchronizedSet(new HashSet<Graph>());
+
     /**
      * The default graph, used for addCustomData when you don't want a specific graph
      */
     private final Graph defaultGraph = new Graph("Default");
+
     /**
      * The plugin configuration file
      */
     private final YamlConfiguration configuration;
+
     /**
      * The plugin configuration file
      */
     private final File configurationFile;
+
     /**
      * Unique server id
      */
     private final String guid;
+
     /**
      * Debug mode
      */
     private final boolean debug;
+
     /**
      * Lock for synchronization
      */
     private final Object optOutLock = new Object();
+
     /**
      * The scheduled task
      */
     private volatile BukkitTask task = null;
+
+
+	// custom functions added for pxnMetrics
+	protected String getBASE_URL() {
+		return BASE_URL;
+	}
+	protected int getPING_INTERVAL() {
+		return PING_INTERVAL;
+	}
+	public String getGUID() {
+		return guid;
+	}
+
 
     public Metrics(final Plugin plugin) throws IOException {
         if (plugin == null) {
@@ -253,7 +280,7 @@ public class Metrics {
                         }
                     }
                 }
-            }, 0, PING_INTERVAL * 1200);
+            }, 0, getPING_INTERVAL() * 1200);
 
             return true;
         }
@@ -417,7 +444,7 @@ public class Metrics {
         }
 
         // Create the url
-        URL url = new URL(BASE_URL + String.format(REPORT_URL, encode(pluginName)));
+        URL url = new URL(getBASE_URL() + String.format(REPORT_URL, encode(pluginName)));
 
         // Connect to the website
         URLConnection connection;

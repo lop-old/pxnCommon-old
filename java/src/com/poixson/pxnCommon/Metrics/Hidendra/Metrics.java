@@ -44,7 +44,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -145,6 +144,10 @@ public class Metrics {
 	}
 	public String getGUID() {
 		return guid;
+	}
+	// logger
+	protected void logInfo(String msg) {
+		Bukkit.getLogger().info(msg);
 	}
 
 
@@ -276,7 +279,7 @@ public class Metrics {
                         firstPost = false;
                     } catch (IOException e) {
                         if (debug) {
-                            Bukkit.getLogger().log(Level.INFO, "[Metrics] " + e.getMessage());
+                            logInfo(e.getMessage());
                         }
                     }
                 }
@@ -298,12 +301,12 @@ public class Metrics {
                 configuration.load(getConfigFile());
             } catch (IOException ex) {
                 if (debug) {
-                    Bukkit.getLogger().log(Level.INFO, "[Metrics] " + ex.getMessage());
+                	logInfo(ex.getMessage());
                 }
                 return true;
             } catch (InvalidConfigurationException ex) {
                 if (debug) {
-                    Bukkit.getLogger().log(Level.INFO, "[Metrics] " + ex.getMessage());
+                	logInfo(ex.getMessage());
                 }
                 return true;
             }

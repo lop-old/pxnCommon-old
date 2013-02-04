@@ -26,8 +26,16 @@ public class pxnMetrics extends com.poixson.pxnCommon.Metrics.Hidendra.Metrics {
 	}
 
 
+	@Override
 	protected String getBASE_URL() {
 		return "http://metrics.poixson.com";
+	}
+
+
+	// logger
+	@Override
+	protected void logInfo(String msg) {
+		log.info("["+pluginName+"] [Metrics] "+msg);
 	}
 
 

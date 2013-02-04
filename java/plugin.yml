@@ -1,0 +1,6 @@
+name: pxnCommon
+main: com.poixson.pxnCommon.pxnCommon
+version: 3.0.0
+author: lorenzop
+website: http://poixson.com/
+softdepend: [Vault]

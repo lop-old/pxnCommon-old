@@ -35,6 +35,7 @@ public class pxnMetrics extends com.poixson.pxnCommon.Metrics.Hidendra.Metrics {
 	// logger
 	@Override
 	protected void logInfo(String msg) {
+		if(msg == null) msg = "<null>";
 		log.info("["+pluginName+"] [Metrics] "+msg);
 	}
 

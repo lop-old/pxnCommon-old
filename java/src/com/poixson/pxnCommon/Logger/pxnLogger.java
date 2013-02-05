@@ -13,10 +13,12 @@ public class pxnLogger {
 
 
 	public pxnLogger(String pluginName) {
+		if(pluginName == null) throw new NullPointerException("pluginName can't be null!");
 		this.pluginName = pluginName;
 		formatListeners.add(new FormatText());
 	}
 	public static pxnLogger clone(pxnLogger logCloning) {
+		if(logCloning == null) throw new NullPointerException("logCloning can't be null!");
 		pxnLogger newLog = new pxnLogger(logCloning.pluginName);
 		return newLog;
 	}
@@ -87,6 +89,7 @@ public class pxnLogger {
 	 * @param e Exception
 	 */
 	public void exception(Exception e) {
+		if(e == null) e = new NullPointerException("Null exception passed to logger! This isn't normal!");
 		severe(e.getMessage());
 		e.printStackTrace();
 	}
@@ -95,6 +98,7 @@ public class pxnLogger {
 	// format listeners
 	protected List<FormatListener> formatListeners = new ArrayList<FormatListener>();
 	protected String runFormatListeners(String text) {
+		if(text == null) text = "<null>";
 		for(FormatListener listener : formatListeners)
 			text = listener.getForConsole(text);
 		return text;

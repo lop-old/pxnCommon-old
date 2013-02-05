@@ -11,7 +11,7 @@ public abstract class pxnTask implements Runnable {
 
 
 	public pxnTask(String taskName) {
-		if(taskName == null) throw new IllegalArgumentException("taskName can't be null!");
+		if(taskName == null) throw new NullPointerException("taskName can't be null!");
 		this.taskName = taskName;
 	}
 
@@ -34,6 +34,13 @@ public abstract class pxnTask implements Runnable {
 	// skip task message
 	protected void SkipTaskMessage() {
 		log.warning("Skipping task - The "+taskName+" task is taking longer to complete than your repeat frequency. Please adjust your config!");
+	}
+
+
+	// task name
+	public void setTaskName(String taskName) {
+		if(taskName == null) throw new NullPointerException("taskName can't be null!");
+		this.taskName = taskName;
 	}
 
 

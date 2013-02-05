@@ -14,6 +14,7 @@ public class DelayedLoader {
 
 	// add plugin to enable later
 	public static void addPlugin(JavaPlugin plugin) {
+		if(plugin == null) throw new NullPointerException("plugin can't be null!");
 		synchronized(plugins) {
 			plugins.add(plugin);
 		}

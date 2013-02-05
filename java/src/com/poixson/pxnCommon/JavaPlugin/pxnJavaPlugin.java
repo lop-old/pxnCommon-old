@@ -3,7 +3,10 @@ package com.poixson.pxnCommon.JavaPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.poixson.pxnCommon.Language.pxnLanguageMessages;
 import com.poixson.pxnCommon.Logger.pxnLogger;
+import com.poixson.pxnCommon.dbPool.dbPool;
+import com.poixson.pxnCommon.dbPool.dbPoolConn;
 
 
 public abstract class pxnJavaPlugin extends JavaPlugin {
@@ -16,8 +19,25 @@ public abstract class pxnJavaPlugin extends JavaPlugin {
 	public abstract String getPluginName();
 	public abstract String getPluginFullName();
 
-	// logger
-	public abstract pxnLogger getLog();
+
+	public pxnJavaPlugin() {
+		plugin = this;
+	}
+	protected static pxnJavaPlugin plugin = null;
+	public static pxnJavaPlugin getPlugin() {
+		return plugin;
+	}
+
+
+	// is plugin is loaded
+	public boolean isOk() {
+		return isOk;
+	}
+	// is debug mode
+	public boolean isDebug() {
+		return isDebug;
+	}
+
 
 	// plugin version
 	public abstract String getRunningVersion();
@@ -33,13 +53,40 @@ public abstract class pxnJavaPlugin extends JavaPlugin {
 	}
 
 
-	// is plugin is loaded
-	public boolean isOk() {
-		return isOk;
+	// logger
+	protected pxnLogger log = null;
+	// get logger
+	public pxnLogger getLog() {
+		if(log == null)
+			log = new pxnLogger("PoiXson Plugin");
+		return log;
 	}
-	// is debug mode
-	public boolean isDebug() {
-		return isDebug;
+
+
+	// config
+	protected pxnConfig config = null;
+	// get config
+	public pxnConfig getPxnConfig() {
+		return config;
+	}
+
+
+	// database pool
+	protected dbPool db = null;
+	// get db lock from pool
+	public dbPoolConn getDB() {
+		if(db == null)
+			return null;
+		return db.getLock();
+	}
+
+
+	// language
+	protected pxnLanguageMessages language = null;
+	public pxnLanguageMessages getLang() {
+		if(language == null)
+			language = pxnLanguageMessages.factory();
+		return language;
 	}
 
 

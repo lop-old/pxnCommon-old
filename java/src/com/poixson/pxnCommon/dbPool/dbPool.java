@@ -18,7 +18,6 @@ public class dbPool {
 	protected List<dbPoolConn> pool = new ArrayList<dbPoolConn> (1);
 
 	protected pxnLogger log;
-	protected List<String> errorMessages = new ArrayList<String>();
 
 
 	public dbPool(String host, int port, String user, String pass, String database) {
@@ -36,11 +35,6 @@ public class dbPool {
 		// make first connection
 		dbPoolConn db = getLock();
 		db.releaseLock();
-	}
-
-
-	public boolean isOk() {
-		return (errorMessages.size() == 0);
 	}
 
 
@@ -89,10 +83,15 @@ public class dbPool {
 	}
 
 
-	protected void addErrorMessage(String msg) {
+	// error messages
+	protected List<String> errorMsgs = new ArrayList<String>();
+	public boolean isOk() {
+		return errorMsgs.isOk();
+	}
+	protected void addErrorMsg(String msg) {
 		getLog().severe(msg);
-		synchronized(errorMessages) {
-			errorMessages.add(msg);
+		synchronized(errorMsgs) {
+			errorMsgs.add(msg);
 		}
 	}
 

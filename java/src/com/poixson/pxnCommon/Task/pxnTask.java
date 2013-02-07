@@ -1,61 +1,201 @@
-package com.poixson.pxnCommon;
+package com.poixson.pxnCommon.Task;
 
+import java.util.HashMap;
+
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
+
+import com.poixson.pxnCommon.JavaPlugin.pxnJavaPlugin;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 
 
 public abstract class pxnTask implements Runnable {
 
-	protected Boolean running = false;
+	protected final pxnJavaPlugin plugin;
+	protected final static BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
+	protected BukkitTask bukkitTask = null;
+
+	// state booleans
+	protected boolean isActive   = false;
+	protected int     isRunning  = 0;
+	protected boolean isThreaded = false;
+	protected boolean isLockable = false;
+	protected boolean isLocked   = false;
+
 	protected String taskName;
-	private pxnLogger log = null;
+	protected long delay  = -1;
+	protected long period = -1;
+	protected int taskRunCount = 0;
+
+	protected pxnLogger log = null;
+	protected final Object lock = new Object();
+
+	protected static HashMap<String, pxnTask> taskMap = new HashMap<String, pxnTask>();
 
 
-	public pxnTask(String taskName) {
-		if(taskName == null) throw new NullPointerException("taskName can't be null!");
-		this.taskName = taskName;
+	// new scheduled task
+	public pxnTask(pxnJavaPlugin plugin, String taskName) {
+		this(plugin, taskName, null, null);
 	}
-
-
-	// get a lock
-	protected boolean getLock() {
-		if(running) { SkipTaskMessage(); return false; }
-		synchronized(running) {
-			if(running) { SkipTaskMessage(); return false; }
-			running = true;
-			return true;
+	public pxnTask(pxnJavaPlugin plugin, String taskName, Boolean isThreaded, Boolean isLockable) {
+		if(taskName == null) throw new NullPointerException("taskName can't be null!");
+		if(plugin   == null) throw new NullPointerException("plugin can't be null!");
+		this.plugin = plugin;
+		this.log = plugin.getLog();
+		if(isThreaded != null)
+			this.isThreaded = isThreaded;
+		if(isLockable != null)
+			this.isLockable = isLockable;
+		synchronized(lock) {
+			if(taskMap.containsKey(taskName)) {
+				// find a unique name
+				int i = 1;
+				while(true) {
+					i++;
+					if(!taskMap.containsKey( taskName+Integer.toString(i) )) {
+						taskName = taskName+Integer.toString(i);
+						break;
+					}
+				}
+			}
+			this.taskName = taskName;
+			taskMap.put(taskName, this);
 		}
 	}
-	// release the lock
-	protected void releaseLock() {
-		running = false;
+
+
+	// start scheduled task
+	public pxnTask Start() {
+		if(delay < 1) throw new IllegalArgumentException("delay must be set! task: "+taskName);
+		synchronized(lock) {
+			isActive = true;
+			bukkitTask = newScheduler(plugin, isActive, this, delay, period);
+		}
+		return this;
+	}
+	// stop scheduled task
+	public void Stop() {
+		bukkitTask.cancel();
+		isActive = false;
+	}
+
+
+	@Override
+	public void run() {
+		if(isLockable && isRunning > 0) {
+			SkipTaskMessage(); return;}
+		synchronized(lock) {
+			if(isLockable && isRunning > 0) {
+				SkipTaskMessage(); return;}
+			isRunning++;
+			taskRunCount++;
+			runTask();
+			isRunning--;
+		}
+	}
+	protected abstract void runTask();
+
+
+	public static BukkitTask newSchedulerOnce(JavaPlugin plugin, boolean isThreaded, Runnable runnable, long delay) {
+		return newScheduler(plugin, isThreaded, runnable, delay, -1);
+	}
+	public static BukkitTask newScheduler(JavaPlugin plugin, boolean isThreaded, Runnable runnable, long delay, long period) {
+		if(delay < 1) throw new IllegalArgumentException("delay must be set!");
+		// run once
+		if(period < 1) {
+			// threaded once
+			if(isThreaded)
+				return bukkitScheduler.runTaskLaterAsynchronously(
+					plugin,
+					runnable,
+					delay
+				);
+			// blocking once
+			else
+				return bukkitScheduler.runTaskLater(
+					plugin,
+					runnable,
+					delay
+				);
+		// run repeated
+		} else {
+			// threaded repeated
+			if(isThreaded)
+				return bukkitScheduler.runTaskTimerAsynchronously(
+					plugin,
+					runnable,
+					delay,
+					period
+				);
+			// blocking repeated
+			else
+				return bukkitScheduler.runTaskTimer(
+					plugin,
+					runnable,
+					delay,
+					period
+				);
+		}
+	}
+
+
+	// run once / repeated
+	public pxnTask setRunRepeated() {
+		setRunOnce(false);
+		return this;
+	}
+	public pxnTask setRunOnce() {
+		setRunOnce(true);
+		return this;
+	}
+	public pxnTask setRunOnce(boolean runOnce) {
+		if(runOnce)
+			this.period = -1;
+		else
+			this.period = 20;
+		return this;
+	}
+
+	// threaded / blocking
+	public pxnTask setBlocking() {
+		setThreaded(false);
+		return this;
+	}
+	public pxnTask setThreaded() {
+		setThreaded(true);
+		return this;
+	}
+	public pxnTask setThreaded(boolean isThreaded) {
+		this.isThreaded = isThreaded;
+		return this;
+	}
+
+	// lockable
+	public pxnTask setLockable() {
+		setLockable(true);
+		return this;
+	}
+	public pxnTask setLockable(boolean isLockable) {
+		this.isLockable = isLockable;
+		return this;
+	}
+
+	// delay ms
+	public pxnTask setDelay(long delay) {
+		this.delay = delay;
+		return this;
+	}
+	public pxnTask setPeriod(long period) {
+		this.period = period;
+		return this;
 	}
 
 
 	// skip task message
 	protected void SkipTaskMessage() {
 		log.warning("Skipping task - The "+taskName+" task is taking longer to complete than your repeat frequency. Please adjust your config!");
-	}
-
-
-	// task name
-	public void setTaskName(String taskName) {
-		if(taskName == null) throw new NullPointerException("taskName can't be null!");
-		this.taskName = taskName;
-	}
-
-
-	// logger
-	protected pxnLogger getLogger() {
-		synchronized(log) {
-			if(log == null)
-				log = new pxnLogger(taskName);
-			return log;
-		}
-	}
-	public void setLogger(pxnLogger log) {
-		synchronized(log) {
-			this.log = log;
-		}
 	}
 
 

@@ -1,5 +1,8 @@
 package com.poixson.pxnCommon.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,27 +15,30 @@ import com.poixson.pxnCommon.dbPool.dbPoolConn;
 public abstract class pxnJavaPlugin extends JavaPlugin {
 
 	// plugin state
-	protected boolean isOk    = false;
+//	protected boolean isOk    = false;
 	protected boolean isDebug = false;
+
 
 	// plugin name
 	public abstract String getPluginName();
-	public abstract String getPluginFullName();
+//	public abstract String getPluginFullName();
 
 
+	// plugin instance
+	protected static pxnJavaPlugin pxnPlugin = null;
 	public pxnJavaPlugin() {
-		plugin = this;
+		// only one instance allowed
+		if(pxnPlugin != null) {
+			PluginAlreadyRunningMessage();
+			return;
+		}
+		pxnPlugin = this;
 	}
-	protected static pxnJavaPlugin plugin = null;
 	public static pxnJavaPlugin getPlugin() {
-		return plugin;
+		return pxnPlugin;
 	}
 
 
-	// is plugin is loaded
-	public boolean isOk() {
-		return isOk;
-	}
 	// is debug mode
 	public boolean isDebug() {
 		return isDebug;
@@ -40,7 +46,6 @@ public abstract class pxnJavaPlugin extends JavaPlugin {
 
 
 	// plugin version
-	public abstract String getRunningVersion();
 	protected String availableVersion = null;
 	public String getAvailableVersion() {
 		return availableVersion;
@@ -51,6 +56,7 @@ public abstract class pxnJavaPlugin extends JavaPlugin {
 //TODO: compare versions
 		return false;
 	}
+//	public abstract String getRunningVersion();
 
 
 	// logger
@@ -90,11 +96,24 @@ public abstract class pxnJavaPlugin extends JavaPlugin {
 	}
 
 
+	// error messages
+	protected List<String> errorMsgs = new ArrayList<String>();
+	public boolean isOk() {
+		return errorMessages.isOksize();
+	}
+	protected void addErrorMsg(String msg) {
+		getLog().severe(msg);
+		synchronized(errorMessages) {
+			errorMsgs.add(msg);
+		}
+	}
+
+
 	protected void PluginAlreadyRunningMessage() {
 		getServer().getConsoleSender().sendMessage(ChatColor.RED+"********************************************");
 		getServer().getConsoleSender().sendMessage(ChatColor.RED+"*** WebAuctionPlus is already running!!! ***");
 		getServer().getConsoleSender().sendMessage(ChatColor.RED+"********************************************");
-		getLog().severe("Plugin is already loaded!! Can't load a second copy of this plugin.");
+		addErrorMsg("Plugin is already loaded!! Can't load a second copy of this plugin!");
 	}
 
 

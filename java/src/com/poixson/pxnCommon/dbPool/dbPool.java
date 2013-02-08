@@ -86,7 +86,7 @@ public class dbPool {
 	// error messages
 	protected List<String> errorMsgs = new ArrayList<String>();
 	public boolean isOk() {
-		return errorMsgs.isOk();
+		return (errorMsgs.size() == 0);
 	}
 	protected void addErrorMsg(String msg) {
 		getLog().severe(msg);

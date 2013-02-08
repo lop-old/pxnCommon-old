@@ -61,10 +61,6 @@ public class FormatText implements FormatListener {
 //	}};
 
 
-
-	// chat prefix
-
-
 	public static String formatConsole(String text) {
 		if(text == null) text = "<null>";
 		if(text.contains("{") && text.contains("}")) {

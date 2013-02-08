@@ -63,23 +63,23 @@ public class dbPoolConn {
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 			conn = DriverManager.getConnection("jdbc:mysql://"+host+":"+Integer.toString(port)+"/"+database, user, pass);
 			if(conn == null || conn.isClosed()) {
-				parent.addErrorMessage("There was a problem getting the MySQL connection!!!");
+				parent.addErrorMsg("There was a problem getting the MySQL connection!!!");
 			} else {
 				// connection ok
 				return;
 			}
 		} catch (ClassNotFoundException e) {
-			parent.addErrorMessage("Unable to load database driver!");
+			parent.addErrorMsg("Unable to load database driver!");
 			getLog().exception(e);
 			return;
 		} catch (InstantiationException e) {
-			parent.addErrorMessage("Unable to create database driver!");
+			parent.addErrorMsg("Unable to create database driver!");
 			getLog().exception(e);
 		} catch (IllegalAccessException e) {
-			parent.addErrorMessage("Unable to create database driver!");
+			parent.addErrorMsg("Unable to create database driver!");
 			getLog().exception(e);
 		} catch (SQLException e) {
-			parent.addErrorMessage("SQL Error!");
+			parent.addErrorMsg("SQL Error!");
 			getLog().exception(e);
 		}
 		conn = null;

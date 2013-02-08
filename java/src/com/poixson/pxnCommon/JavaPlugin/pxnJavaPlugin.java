@@ -99,11 +99,11 @@ public abstract class pxnJavaPlugin extends JavaPlugin {
 	// error messages
 	protected List<String> errorMsgs = new ArrayList<String>();
 	public boolean isOk() {
-		return errorMessages.isOksize();
+		return (errorMsgs.size() == 0);
 	}
 	protected void addErrorMsg(String msg) {
 		getLog().severe(msg);
-		synchronized(errorMessages) {
+		synchronized(errorMsgs) {
 			errorMsgs.add(msg);
 		}
 	}

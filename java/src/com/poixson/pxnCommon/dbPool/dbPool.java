@@ -3,11 +3,16 @@ package com.poixson.pxnCommon.dbPool;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.poixson.pxnCommon.JavaPlugin.pxnJavaPlugin;
+import com.poixson.pxnCommon.BukkitPlugin.pxnPlugin;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 
 
 public class dbPool {
+
+	// plugin
+	protected final pxnPlugin plugin;
+	// logger
+	protected final pxnLogger log;
 
 	private final String host;
 	private final int    port;
@@ -17,11 +22,11 @@ public class dbPool {
 
 	protected List<dbPoolConn> pool = new ArrayList<dbPoolConn> (1);
 
-	protected pxnLogger log;
 
-
-	public dbPool(String host, int port, String user, String pass, String database) {
-		log = pxnJavaPlugin.getPlugin().getLog();
+	public dbPool(pxnPlugin plugin, String host, int port, String user, String pass, String database) {
+		if(plugin == null) throw new NullPointerException("plugin can't be null!");
+		this.plugin = plugin;
+		log = plugin.getLog();
 		if(host == null || host.isEmpty()) host = "localhost";
 		if(port < 1) port = 3306;
 		if(user == null || user.isEmpty()) throw new IllegalArgumentException("Database username not set!");
@@ -33,8 +38,7 @@ public class dbPool {
 		this.pass = pass;
 		this.database = database;
 		// make first connection
-		dbPoolConn db = getLock();
-		db.releaseLock();
+		getLock().releaseLock();
 	}
 
 
@@ -52,6 +56,7 @@ public class dbPool {
 			return db;
 		}
 	}
+
 
 //	// get a lock from pool
 //	public MySQLPoolConn getLock() {
@@ -74,26 +79,6 @@ public class dbPool {
 //			return poolConn;
 //		}
 //	}
-
-
-	protected pxnLogger getLog() {
-		if(log == null)
-			log = pxnJavaPlugin.getPlugin().getLog();
-		return log;
-	}
-
-
-	// error messages
-	protected List<String> errorMsgs = new ArrayList<String>();
-	public boolean isOk() {
-		return (errorMsgs.size() == 0);
-	}
-	protected void addErrorMsg(String msg) {
-		getLog().severe(msg);
-		synchronized(errorMsgs) {
-			errorMsgs.add(msg);
-		}
-	}
 
 
 }

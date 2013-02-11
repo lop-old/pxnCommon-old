@@ -4,23 +4,20 @@ import java.util.HashMap;
 
 import org.bukkit.scheduler.BukkitTask;
 
-import com.poixson.pxnCommon.JavaPlugin.pxnJavaPlugin;
-import com.webauctionplus.WebAuctionPlus;
+import com.poixson.pxnCommon.BukkitPlugin.pxnPlugin;
 
 
 public abstract class pxnTaskThrottled extends pxnTask {
 
 	protected BukkitTask bukkitTask = null;
-
 	protected static HashMap<String, pxnTask> tasks = new HashMap<String, pxnTask>();
-
 	protected int taskLoopCount = 0;
 
 
-	public pxnTaskThrottled(pxnJavaPlugin plugin, String taskName) {
+	public pxnTaskThrottled(pxnPlugin plugin, String taskName) {
 		super(plugin, taskName);
 	}
-	public pxnTaskThrottled(pxnJavaPlugin plugin, String taskName, boolean isThreaded, boolean isLockable) {
+	public pxnTaskThrottled(pxnPlugin plugin, String taskName, boolean isThreaded, boolean isLockable) {
 		super(plugin, taskName, isThreaded, isLockable);
 	}
 

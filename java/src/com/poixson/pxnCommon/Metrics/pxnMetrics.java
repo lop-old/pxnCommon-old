@@ -19,6 +19,8 @@ public class pxnMetrics extends com.poixson.pxnCommon.Metrics.Hidendra.Metrics {
 	public pxnMetrics(Plugin plugin) throws IOException {
 		super(plugin);
 		log = Logger.getLogger("Minecraft");
+		if(!isOptOut())
+			logInfo("Starting metrics..");
 	}
 	public pxnMetrics(Plugin plugin, String pluginName) throws IOException {
 		this(plugin);

@@ -1,119 +1,134 @@
-package com.poixson.pxnCommon.JavaPlugin;
+package com.poixson.pxnCommon.BukkitPlugin;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.ChatColor;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import com.poixson.pxnCommon.Language.pxnLanguageMessages;
-import com.poixson.pxnCommon.Logger.pxnLogger;
-import com.poixson.pxnCommon.dbPool.dbPool;
-import com.poixson.pxnCommon.dbPool.dbPoolConn;
 
 
-public abstract class pxnJavaPlugin extends JavaPlugin {
-
-	// plugin state
-//	protected boolean isOk    = false;
-	protected boolean isDebug = false;
-
-
-	// plugin name
-	public abstract String getPluginName();
-//	public abstract String getPluginFullName();
+public abstract class pxnPlugin extends pxnPluginObjects {
 
 
 	// plugin instance
-	protected static pxnJavaPlugin pxnPlugin = null;
-	public pxnJavaPlugin() {
-		// only one instance allowed
-		if(pxnPlugin != null) {
-			PluginAlreadyRunningMessage();
-			return;
+	protected static HashMap<String, pxnPlugin> pxnPlugins = new HashMap<String, pxnPlugin>();
+	public pxnPlugin() {
+		super();
+		synchronized(pxnPlugins) {
+			if(!isOk()) return;
+			// only one instance allowed
+			if(pxnPlugins.containsKey(getPluginName())) {
+				PluginAlreadyRunningMessage();
+				return;
+			}
+			pxnPlugins.put(getPluginName(), this);
 		}
-		pxnPlugin = this;
 	}
-	public static pxnJavaPlugin getPlugin() {
-		return pxnPlugin;
+	public static pxnPlugin getPlugin(String pluginName) {
+		return pxnPlugins.get(pluginName);
 	}
 
 
-	// is debug mode
-	public boolean isDebug() {
-		return isDebug;
+//	@Override
+//	public void onEnable() {
+//	}
+
+
+//	@Override
+//	public void onDisable() {
+//	}
+
+
+	// plugin name
+	public String getPluginName() {
+		return getDescription().getName();
+	}
+	// plugin name & version
+	public String getPluginFullName() {
+		return getPluginName()+" "+getPluginVersion();
 	}
 
 
 	// plugin version
+	public String getPluginVersion() {
+		return getDescription().getVersion();
+	}
+	// available version
 	protected String availableVersion = null;
 	public String getAvailableVersion() {
+//TODO:
+availableVersion = "1.0";
 		return availableVersion;
 	}
 	public boolean isUpdateAvailable() {
-		if(availableVersion == null)
-			return false;
+		String available = getAvailableVersion();
+		if(available == null) return false;
 //TODO: compare versions
 		return false;
 	}
-//	public abstract String getRunningVersion();
 
 
-	// logger
-	protected pxnLogger log = null;
-	// get logger
-	public pxnLogger getLog() {
-		if(log == null)
-			log = new pxnLogger("PoiXson Plugin");
-		return log;
+	// severe error messages
+	protected void PluginAlreadyRunningMessage() {
+		errorMsg("WebAuctionPlus is already running!!!\nCan't load a second copy of this plugin!!!");
 	}
 
 
-//	// config
-//	protected pxnConfig config = null;
-//	// get config
-//	public pxnConfig getPxnConfig() {
-//		return config;
-//	}
-
-
-	// database pool
-	protected dbPool db = null;
-	// get db lock from pool
-	public dbPoolConn getDB() {
-		if(db == null)
-			return null;
-		return db.getLock();
+	// is ok
+	protected Boolean isOk = null;
+	public boolean isOk() {
+		if(isOk == null)
+			return false;
+		return isOk;
 	}
-
-
-	// language
-	protected pxnLanguageMessages language = null;
-	public pxnLanguageMessages getLang() {
-		if(language == null)
-			language = pxnLanguageMessages.factory();
-		return language;
+	protected void setOk() {
+		isOk = true;
+	}
+	protected void setNotOk() {
+		isOk = false;
 	}
 
 
 	// error messages
 	protected List<String> errorMsgs = new ArrayList<String>();
-	public boolean isOk() {
-		return (errorMsgs.size() == 0);
-	}
-	protected void addErrorMsg(String msg) {
-		getLog().severe(msg);
+	public void errorMsg(String msg) {
+		isOk = false;
 		synchronized(errorMsgs) {
 			errorMsgs.add(msg);
+		}
+		ConsoleAlert(msg);
+	}
+	public String[] errorMsgs() {
+		synchronized(errorMsgs) {
+			return (String[]) errorMsgs.toArray();
 		}
 	}
 
 
-	protected void PluginAlreadyRunningMessage() {
-		getServer().getConsoleSender().sendMessage(ChatColor.RED+"********************************************");
-		getServer().getConsoleSender().sendMessage(ChatColor.RED+"*** WebAuctionPlus is already running!!! ***");
-		getServer().getConsoleSender().sendMessage(ChatColor.RED+"********************************************");
-		addErrorMsg("Plugin is already loaded!! Can't load a second copy of this plugin!");
+	// display single lined message
+	protected void ConsoleAlert(String alert) {
+		// multi-line message
+		if(alert.contains("\n"))
+			ConsoleAlert(alert.split("\n"));
+		// single lined message
+		int len = alert.length();
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+"*** "+alert+" ***");
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
+	}
+	// display multi-line message
+	protected void ConsoleAlert(String[] alerts) {
+		int len = 0;
+		// find max length
+		for(String alert : alerts)
+			if(alert.length() > len)
+				len = alert.length();
+		// display message
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
+		for(String alert : alerts)
+			getServer().getConsoleSender().sendMessage(ChatColor.RED+"*** "+alert+StringUtils.repeat(" ", len-alert.length() )+" ***");
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
 	}
 
 

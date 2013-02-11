@@ -65,23 +65,26 @@ public class pxnUtils {
 	}
 
 
-	// random number (unique)
-	public static int getRandom(int minNumber, int maxNumber) {
+	// random number
+	public static int RND(int min, int max) {
 		Random randomGen = new Random(getCurrentMillis());
-		return randomGen.nextInt(maxNumber) + minNumber;
+		return randomGen.nextInt(max) + min;
 	}
-	public static int getNewRandom(int minNumber, int maxNumber, int oldNumber) {
-		if(minNumber == maxNumber) return minNumber;
-		if((maxNumber - minNumber) == 1)
-			if(oldNumber == minNumber)
-				return maxNumber;
+	// random number (unique)
+	public static int uniqueRND(int min, int max, int last) {
+		if(min == max) return min;
+		if((max - min) == 1) {
+			if(last == min)
+				return max;
 			else
-				return minNumber;
-		int newNumber;
-		while(true) {
-			newNumber = getRandom(minNumber, maxNumber);
-			if (newNumber != oldNumber) return newNumber;
+				return min;
 		}
+		int number = 0;
+		for(int i=0; i<10; i++) {
+			number = RND(min, max);
+			if(number != last) break;
+		}
+		return number;
 	}
 
 

@@ -7,13 +7,19 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 
-import com.poixson.pxnCommon.JavaPlugin.pxnJavaPlugin;
+import com.poixson.pxnCommon.BukkitPlugin.pxnPlugin;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 
 
 public abstract class pxnTask implements Runnable {
 
-	protected final pxnJavaPlugin plugin;
+	// plugin
+	protected final pxnPlugin plugin;
+	// logger
+	protected final pxnLogger log;
+	// tasks map
+	protected HashMap<String, pxnTask> tasks;
+	// bukkit scheduler
 	protected final static BukkitScheduler bukkitScheduler = Bukkit.getServer().getScheduler();
 	protected BukkitTask bukkitTask = null;
 
@@ -29,47 +35,54 @@ public abstract class pxnTask implements Runnable {
 	protected long period = -1;
 	protected int taskRunCount = 0;
 
-	protected pxnLogger log = null;
 	protected final Object lock = new Object();
-
-	protected static HashMap<String, pxnTask> taskMap = new HashMap<String, pxnTask>();
 
 
 	// new scheduled task
-	public pxnTask(pxnJavaPlugin plugin, String taskName) {
+	public pxnTask(pxnPlugin plugin, String taskName) {
 		this(plugin, taskName, null, null);
 	}
-	public pxnTask(pxnJavaPlugin plugin, String taskName, Boolean isThreaded, Boolean isLockable) {
+	public pxnTask(pxnPlugin plugin, String taskName, Boolean isThreaded, Boolean isLockable) {
 		if(taskName == null) throw new NullPointerException("taskName can't be null!");
 		if(plugin   == null) throw new NullPointerException("plugin can't be null!");
 		this.plugin = plugin;
 		this.log = plugin.getLog();
+		this.tasks = plugin.getTaskMap();
+		if(this.tasks == null)
+			this.tasks = new HashMap<String, pxnTask>();
 		if(isThreaded != null)
 			this.isThreaded = isThreaded;
 		if(isLockable != null)
 			this.isLockable = isLockable;
 		synchronized(lock) {
-			if(taskMap.containsKey(taskName)) {
-				// find a unique name
-				int i = 1;
-				while(true) {
-					i++;
-					if(!taskMap.containsKey( taskName+Integer.toString(i) )) {
-						taskName = taskName+Integer.toString(i);
-						break;
+			synchronized(this.tasks) {
+				if(this.tasks.containsKey(taskName)) {
+					// find a unique name
+					int i = 1;
+					while(true) {
+						i++;
+						if(!this.tasks.containsKey( taskName+Integer.toString(i) )) {
+							taskName = taskName+Integer.toString(i);
+							break;
+						}
 					}
 				}
+				this.taskName = taskName;
+				this.tasks.put(taskName, this);
 			}
-			this.taskName = taskName;
-			taskMap.put(taskName, this);
 		}
 	}
 
 
 	// start scheduled task
 	public pxnTask Start() {
+		if(bukkitTask != null) {
+			log.severe("This task has already been started! "+taskName);
+			return null;
+		}
 		if(delay < 1) throw new IllegalArgumentException("delay must be set! task: "+taskName);
 		synchronized(lock) {
+			log.info("Starting scheduled tasks..");
 			isActive = true;
 			bukkitTask = newScheduler(plugin, isActive, this, delay, period);
 		}
@@ -77,8 +90,23 @@ public abstract class pxnTask implements Runnable {
 	}
 	// stop scheduled task
 	public void Stop() {
-		bukkitTask.cancel();
-		isActive = false;
+		synchronized(lock) {
+			bukkitTask.cancel();
+			isActive = false;
+		}
+	}
+	// stop all tasks
+	public static void StopAll(pxnPlugin plugin) {
+		HashMap<String, pxnTask> tasks = plugin.getTaskMap();
+		synchronized(tasks) {
+			plugin.getLog().info("Stopping task scheduler.. [ "+Integer.toString(tasks.size())+" ]");
+			// stop scheduler
+			bukkitScheduler.cancelTasks(plugin);
+			// stop tasks
+			for(pxnTask task : tasks.values())
+				task.Stop();
+			tasks.clear();
+		}
 	}
 
 

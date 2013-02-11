@@ -1,25 +1,21 @@
 package com.poixson.pxnCommon.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 
 public class pxnLogger {
 
-	public static final Logger log = Logger.getLogger("minecraft");
+	protected static final Logger sender = Logger.getLogger("Minecraft");
+	protected FormatConsole console;
 
-	private final String pluginName;
 
-
-	public pxnLogger(String pluginName) {
-		if(pluginName == null) throw new NullPointerException("pluginName can't be null!");
-		this.pluginName = pluginName;
-		formatListeners.add(new FormatText());
+	public pxnLogger(String prefix) {
+		if(prefix == null) throw new NullPointerException("prefix can't be null!");
+		console = new FormatConsole(prefix);
 	}
 	public static pxnLogger clone(pxnLogger logCloning) {
 		if(logCloning == null) throw new NullPointerException("logCloning can't be null!");
-		pxnLogger newLog = new pxnLogger(logCloning.pluginName);
+		pxnLogger newLog = new pxnLogger(logCloning.console.getPrefix());
 		return newLog;
 	}
 
@@ -28,14 +24,14 @@ public class pxnLogger {
 	 * @param msg
 	 */
 	public void debug(String msg) {
-		log.info("["+pluginName+"] "+runFormatListeners(msg));
+		sender.info(console.sendMsg(msg));
 	}
 	/**
 	 * @param container
 	 * @param msg
 	 */
 	public void debug(String container, String msg) {
-		debug("["+container+"] "+runFormatListeners(msg));
+		sender.info(console.sendMsg(container, msg));
 	}
 
 
@@ -43,14 +39,14 @@ public class pxnLogger {
 	 * @param msg
 	 */
 	public void info(String msg) {
-		log.info("["+pluginName+"] "+runFormatListeners(msg));
+		sender.info(console.sendMsg(msg));
 	}
 	/**
 	 * @param container
 	 * @param msg
 	 */
 	public void info(String container, String msg) {
-		info("["+container+"] "+runFormatListeners(msg));
+		sender.info(console.sendMsg(container, msg));
 	}
 
 
@@ -58,14 +54,14 @@ public class pxnLogger {
 	 * @param msg
 	 */
 	public void warning(String msg) {
-		log.warning("["+pluginName+"] "+runFormatListeners(msg));
+		sender.warning(console.sendMsg(msg));
 	}
 	/**
 	 * @param container
 	 * @param msg
 	 */
 	public void warning(String container, String msg) {
-		warning("["+container+"] "+runFormatListeners(msg));
+		sender.warning(console.sendMsg(container, msg));
 	}
 
 
@@ -73,14 +69,14 @@ public class pxnLogger {
 	 * @param msg
 	 */
 	public void severe(String msg) {
-		log.severe("["+pluginName+"] "+runFormatListeners(msg));
+		sender.severe(console.sendMsg(msg));
 	}
 	/**
 	 * @param container
 	 * @param msg
 	 */
 	public void severe(String container, String msg) {
-		severe("["+container+"] "+runFormatListeners(msg));
+		sender.severe(console.sendMsg(container, msg));
 	}
 
 
@@ -92,16 +88,6 @@ public class pxnLogger {
 		if(e == null) e = new NullPointerException("Null exception passed to logger! This isn't normal!");
 		severe(e.getMessage());
 		e.printStackTrace();
-	}
-
-
-	// format listeners
-	protected List<FormatListener> formatListeners = new ArrayList<FormatListener>();
-	protected String runFormatListeners(String text) {
-		if(text == null) text = "<null>";
-		for(FormatListener listener : formatListeners)
-			text = listener.getForConsole(text);
-		return text;
 	}
 
 

@@ -69,12 +69,12 @@ public abstract class pxnJavaPlugin extends JavaPlugin {
 	}
 
 
-	// config
-	protected pxnConfig config = null;
-	// get config
-	public pxnConfig getPxnConfig() {
-		return config;
-	}
+//	// config
+//	protected pxnConfig config = null;
+//	// get config
+//	public pxnConfig getPxnConfig() {
+//		return config;
+//	}
 
 
 	// database pool

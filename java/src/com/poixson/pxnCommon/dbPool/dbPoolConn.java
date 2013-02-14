@@ -51,7 +51,7 @@ public class dbPoolConn {
 
 
 	protected void _Connect() {
-		if(!parent.plugin.isOk()) return;
+		if(parent.plugin.okEquals(false)) return;
 		// already connected
 		try {
 			if(conn != null)

@@ -4,7 +4,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 
-public class uniqueHistoryRND {
+public class HistoryRND {
 
 	private int min;
 	private int max;
@@ -13,10 +13,10 @@ public class uniqueHistoryRND {
 	private int historySize;
 
 
-	public uniqueHistoryRND(int min, int max) {
+	public HistoryRND(int min, int max) {
 		this(min, max, (max - min) / 2);
 	}
-	public uniqueHistoryRND(int min, int max, int historySize) {
+	public HistoryRND(int min, int max, int historySize) {
 		if(min > max) throw new IllegalArgumentException("min must be lower than max!");
 		this.min = min;
 		this.max = max;

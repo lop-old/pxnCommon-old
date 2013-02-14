@@ -38,7 +38,7 @@ System.out.println("start1");
 
 	protected void SleepTaskLoop() {
 
-WebAuctionPlus.getPlugin().getLog().warning("task running!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+log.warning("task running!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 
 // sleep thread

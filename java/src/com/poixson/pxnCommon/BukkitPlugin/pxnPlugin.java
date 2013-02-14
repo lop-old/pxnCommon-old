@@ -16,34 +16,50 @@ public abstract class pxnPlugin extends pxnPluginObjects {
 	public pxnPlugin() {
 		super();
 		synchronized(pxnPlugins) {
-			if(!isOk()) return;
+			if(!okEquals(null)) return;
 			// only one instance allowed
 			if(pxnPlugins.containsKey(getPluginName())) {
-				PluginAlreadyRunningMessage();
+				Message_PluginAlreadyRunning();
 				return;
 			}
 			pxnPlugins.put(getPluginName(), this);
 		}
 	}
+	// get plugin (by name)
 	public static pxnPlugin getPlugin(String pluginName) {
-		return pxnPlugins.get(pluginName);
+		synchronized(pxnPlugins) {
+			if(!pxnPlugins.containsKey(pluginName))
+				return null;
+			return pxnPlugins.get(pluginName);
+		}
 	}
 
 
-//	@Override
-//	public void onEnable() {
-//	}
-
-
-//	@Override
-//	public void onDisable() {
-//	}
-
-
-	// plugin name
-	public String getPluginName() {
-		return getDescription().getName();
+	// load plugin
+	@Override
+	public void onEnable() {
+		super.onEnable();
+		// stop plugin (if needed)
+		if(okEquals(false))
+			StopPlugin();
+		// start plugin
+		StartPlugin();
+		// failed to load
+		if(!okEquals(true)){
+			ConsoleAlert("Failed to load "+getPluginName()+"! Unloading to be safe..");
+			onDisable();
+			return;
+		}
 	}
+
+
+	// unload plugin
+	@Override
+	public void onDisable() {
+		super.onDisable();
+	}
+
+
 	// plugin name & version
 	public String getPluginFullName() {
 		return getPluginName()+" "+getPluginVersion();
@@ -70,23 +86,35 @@ availableVersion = "1.0";
 
 
 	// severe error messages
-	protected void PluginAlreadyRunningMessage() {
-		errorMsg("WebAuctionPlus is already running!!!\nCan't load a second copy of this plugin!!!");
+	protected void Message_PluginAlreadyRunning() {
+		errorMsg(getPluginName()+" is already running!!!\nCan't load a second copy of this plugin!!!");
+		throw new IllegalStateException();
+	}
+	// failed to load plugin
+	protected void Message_PluginLoadingFailed() {
+		log.severe(getPluginName()+" failed to load the plugin!!!");
 	}
 
 
-	// is ok
-	protected Boolean isOk = null;
-	public boolean isOk() {
+	// loaded ok
+	private Boolean isOk = null;
+//	public boolean isOk() {
+//		if(isOk == null)
+//			return false;
+//		return isOk;
+//	}
+	public boolean okEquals(Boolean isOk) {
 		if(isOk == null)
-			return false;
-		return isOk;
+			return (this.isOk == null);
+		return isOk.equals(this.isOk);
 	}
-	protected void setOk() {
-		isOk = true;
-	}
-	protected void setNotOk() {
-		isOk = false;
+	// set loaded ok
+	protected void setOk(Boolean isOk) {
+		this.isOk = isOk;
+		if(this.isOk== null)
+			super.setEnabled(false);
+		else
+			super.setEnabled(isOk);
 	}
 
 
@@ -113,9 +141,9 @@ availableVersion = "1.0";
 			ConsoleAlert(alert.split("\n"));
 		// single lined message
 		int len = alert.length();
-		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("*", len+8));
 		getServer().getConsoleSender().sendMessage(ChatColor.RED+"*** "+alert+" ***");
-		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("*", len+8));
 	}
 	// display multi-line message
 	protected void ConsoleAlert(String[] alerts) {
@@ -125,10 +153,10 @@ availableVersion = "1.0";
 			if(alert.length() > len)
 				len = alert.length();
 		// display message
-		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("*", len+8));
 		for(String alert : alerts)
 			getServer().getConsoleSender().sendMessage(ChatColor.RED+"*** "+alert+StringUtils.repeat(" ", len-alert.length() )+" ***");
-		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("8", len + 8));
+		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("*", len+8));
 	}
 
 

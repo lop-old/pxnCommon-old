@@ -43,8 +43,8 @@ public abstract class pxnTask implements Runnable {
 		this(plugin, taskName, null, null);
 	}
 	public pxnTask(pxnPlugin plugin, String taskName, Boolean isThreaded, Boolean isLockable) {
-		if(taskName == null) throw new NullPointerException("taskName can't be null!");
 		if(plugin   == null) throw new NullPointerException("plugin can't be null!");
+		if(taskName == null) throw new NullPointerException("taskName can't be null!");
 		this.plugin = plugin;
 		this.log = plugin.getLog();
 		this.tasks = plugin.getTaskMap();

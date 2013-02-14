@@ -2,14 +2,11 @@ package com.poixson.pxnCommon.BukkitPlugin;
 
 import java.util.HashMap;
 
-import net.milkbowl.vault.economy.Economy;
-
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.poixson.pxnCommon.Language.pxnLanguageMessages;
-import com.poixson.pxnCommon.Listeners.pxnListenerServer;
 import com.poixson.pxnCommon.Logger.FormatChat;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 import com.poixson.pxnCommon.Task.pxnTask;
@@ -20,8 +17,66 @@ import com.poixson.pxnCommon.dbPool.dbPoolConn;
 public abstract class pxnPluginObjects extends JavaPlugin {
 
 
+	// load/unload plugin
+	protected abstract void StartPlugin();
+	protected abstract void StopPlugin();
+
+	// plugin name
+	public abstract String getPluginName();
+	public abstract String getPluginFullName();
+
+	// plugin version
+	public abstract String getPluginVersion();
+	public abstract String getAvailableVersion();
+	public abstract boolean isUpdateAvailable();
+
+	// error messages
+	protected abstract void Message_PluginAlreadyRunning();
+	protected abstract void Message_PluginLoadingFailed();
+
+	// is ok
+//	public abstract boolean isOk();
+	public abstract boolean okEquals(Boolean isOk);
+	protected abstract void setOk(Boolean isOk);
+
+	// error messages
+	public abstract void errorMsg(String msg);
+	public abstract String[] errorMsgs();
+
+	// display single lined message
+	protected abstract void ConsoleAlert(String alert);
+	// display multi-line message
+	protected abstract void ConsoleAlert(String[] alerts);
+
+
 	public pxnPluginObjects() {
 		super();
+		getLog();
+	}
+
+
+//	@Override
+//	public void onEnable() {
+//		super.onEnable();
+//	}
+
+
+//	@Override
+//	public void onDisable() {
+//		super.onDisable();
+//	}
+
+
+	// single instance of plugin
+	protected static pxnPlugin SingleInstance(pxnPlugin instanceHolder, pxnPlugin newInstance) {
+		if(instanceHolder != null) {
+			if(!instanceHolder.equals(newInstance)) {
+				newInstance.Message_PluginAlreadyRunning();
+				return null;
+			}
+		}
+		instanceHolder = newInstance;
+		return newInstance;
 	}
 
 
@@ -36,7 +91,7 @@ public abstract class pxnPluginObjects extends JavaPlugin {
 	protected pxnLogger log = null;
 	public pxnLogger getLog() {
 		if(log == null)
-			log = new pxnLogger("PoiXson Plugin");
+			log = new pxnLogger(getPluginName());
 		return log;
 	}
 
@@ -79,11 +134,6 @@ public abstract class pxnPluginObjects extends JavaPlugin {
 		if(language == null)
 			language = pxnLanguageMessages.factory();
 		return language;
-	}
-
-
-	public Economy getEconomy() {
-		return pxnListenerServer.getEconomy();
 	}
 
 

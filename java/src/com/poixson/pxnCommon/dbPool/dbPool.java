@@ -24,20 +24,26 @@ public class dbPool {
 
 	public static dbPool factory(pxnPlugin plugin, dbConfig config) {
 		if(plugin.okEquals(false)) return null;
-		// check existing pools
-		for(dbPool pool : staticPools) {
-			if(pool.config.equals(config)) {
-				plugin.getLog().info("db", "Using an existing db pool :-)");
-				plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
-				return pool;
+		synchronized(staticPools) {
+			dbPool db = null;
+			// check existing pools
+			for(dbPool pool : staticPools) {
+				if(pool.config.equals(config)) {
+					plugin.getLog().info("db", "Using an existing db pool :-)");
+					plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
+					db = pool;
+					break;
+				}
 			}
+			// new pool
+			if(db == null) {
+				plugin.getLog().info("db", "Creating a new db pool..");
+				db = new dbPool(plugin, config);
+				staticPools.add(db);
+				plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
+			}
+			return db;
 		}
-		// new pool
-		plugin.getLog().info("db", "Creating a new db pool..");
-		dbPool pool = new dbPool(plugin, config);
-		staticPools.add(pool);
-		plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
-		return pool;
 	}
 
 
@@ -48,31 +54,42 @@ public class dbPool {
 		if(config == null) throw new NullPointerException("dbConfig can't be null!");
 		this.config = config;
 		// force first connection
-		getConnLock().releaseLock();
+		dbPoolConn db = getConnLock();
+		if(db == null) {
+			plugin.errorMsg("Failed to get a database connection!");
+			log.warning(config.dump());
+			return;
+		}
+		db.releaseLock();
 	}
 
 
 	public dbPoolConn getConnLock() {
 		if(hasFailed()) return null;
 		synchronized(pool) {
-			for(dbPoolConn poolConn : pool) {
+			dbPoolConn db = null;
+			// check existing connections
+			for(dbPoolConn poolConn : this.pool) {
 				if(!poolConn.inUse()) {
 					poolConn.inUse = true;
 					plugin.getLog().debug("db", "connection pool size: "+Integer.toString(pool.size()));
-					return poolConn;
+					db = poolConn;
+					break;
 				}
 			}
 			// new connection
-			dbPoolConn db = new dbPoolConn(this, config);
-			pool.add(db);
-			plugin.getLog().debug("db", "connection pool size: "+Integer.toString(pool.size()));
+			if(db == null) {
+				db = new dbPoolConn(this, config);
+				this.pool.add(db);
+				plugin.getLog().debug("db", "connection pool size: "+Integer.toString(pool.size()));
+			}
 			return db;
 		}
 	}
 
 
 	public boolean hasFailed() {
-		return !plugin.okEquals(false);
+		return !(plugin.okEquals(null) || plugin.okEquals(true));
 	}
 
 

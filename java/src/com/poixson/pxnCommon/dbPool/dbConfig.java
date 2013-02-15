@@ -47,4 +47,9 @@ public class dbConfig {
 	}
 
 
+	public String dump() {
+		return user+"@"+host+":"+Integer.toString(port)+"/"+database;
+	}
+
+
 }

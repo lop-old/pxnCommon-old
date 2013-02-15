@@ -14,47 +14,65 @@ public class dbPool {
 	// logger
 	protected final pxnLogger log;
 
-	private final String host;
-	private final int    port;
-	private final String user;
-	private final String pass;
-	private final String database;
-
+	// db config
+	private final dbConfig config;
+	// connections
 	protected List<dbPoolConn> pool = new ArrayList<dbPoolConn> (1);
+	// pools
+	protected static List<dbPool> staticPools = new ArrayList<dbPool>();
 
 
-	public dbPool(pxnPlugin plugin, String host, int port, String user, String pass, String database) {
-		if(plugin == null) throw new NullPointerException("plugin can't be null!");
-		this.plugin = plugin;
-		log = plugin.getLog();
-		if(host == null || host.isEmpty()) host = "localhost";
-		if(port < 1) port = 3306;
-		if(user == null || user.isEmpty()) throw new IllegalArgumentException("Database username not set!");
-		if(pass == null || pass.isEmpty()) throw new IllegalArgumentException("Database password not set!");
-		if(database == null || database.isEmpty()) throw new IllegalArgumentException("database not set!");
-		this.host = host;
-		this.port = port;
-		this.user = user;
-		this.pass = pass;
-		this.database = database;
-		// make first connection
-		getLock().releaseLock();
+	public static dbPool factory(pxnPlugin plugin, dbConfig config) {
+		if(plugin.okEquals(false)) return null;
+		// check existing pools
+		for(dbPool pool : staticPools) {
+			if(pool.config.equals(config)) {
+				plugin.getLog().info("db", "Using an existing db pool :-)");
+				plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
+				return pool;
+			}
+		}
+		// new pool
+		plugin.getLog().info("db", "Creating a new db pool..");
+		dbPool pool = new dbPool(plugin, config);
+		staticPools.add(pool);
+		plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
+		return pool;
 	}
 
 
-	public dbPoolConn getLock() {
+	private dbPool(pxnPlugin plugin, dbConfig config) {
+		if(plugin == null) throw new NullPointerException("plugin can't be null!");
+		this.plugin = plugin;
+		this.log = plugin.getLog();
+		if(config == null) throw new NullPointerException("dbConfig can't be null!");
+		this.config = config;
+		// force first connection
+		getConnLock().releaseLock();
+	}
+
+
+	public dbPoolConn getConnLock() {
+		if(hasFailed()) return null;
 		synchronized(pool) {
 			for(dbPoolConn poolConn : pool) {
 				if(!poolConn.inUse()) {
 					poolConn.inUse = true;
+					plugin.getLog().debug("db", "connection pool size: "+Integer.toString(pool.size()));
 					return poolConn;
 				}
 			}
 			// new connection
-			dbPoolConn db = new dbPoolConn(this, host, port, user, pass, database);
+			dbPoolConn db = new dbPoolConn(this, config);
 			pool.add(db);
+			plugin.getLog().debug("db", "connection pool size: "+Integer.toString(pool.size()));
 			return db;
 		}
+	}
+
+
+	public boolean hasFailed() {
+		return !plugin.okEquals(false);
 	}
 
 

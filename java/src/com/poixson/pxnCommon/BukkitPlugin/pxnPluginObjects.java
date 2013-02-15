@@ -121,10 +121,10 @@ public abstract class pxnPluginObjects extends JavaPlugin {
 
 	// database pool
 	protected dbPool db = null;
-	public dbPoolConn getDB() {
+	public dbPoolConn getConnLock() {
 		if(db == null)
 			return null;
-		return db.getLock();
+		return db.getConnLock();
 	}
 
 

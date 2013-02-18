@@ -9,17 +9,21 @@ import java.sql.SQLException;
 public class dbPrepared {
 
 	protected Connection conn;
+	protected ResultSet rs = null;
+	protected String sql = null;
+	protected int count = -1;
 
 
 	// prepared statement
 	protected PreparedStatement st = null;
 	public dbPoolConn Prepare(String sql) {
+		if(sql == null) throw new NullPointerException("sql can't be null!");
+		if(sql.isEmpty()) throw new IllegalArgumentException("sql can't be empty!");
 		Cleanup();
 		if(conn == null) return null;
-		if(sql.startsWith("UPDATE") || sql.startsWith("DELETE"))
-			isUpdateQuery = true;
 		try {
 			st = conn.prepareStatement(sql);
+			this.sql = sql;
 			return (dbPoolConn) this;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -88,12 +92,12 @@ public class dbPrepared {
 
 
 	// execute query
-	private boolean isUpdateQuery = false;
 	public dbPoolConn Exec() {
 		if(st == null) return null;
+		if(sql == null || sql.isEmpty()) return null;
 		try {
-			if(isUpdateQuery)
-				st.executeUpdate();
+			if(sql.startsWith("UPDATE") || sql.startsWith("DELETE"))
+				count = st.executeUpdate();
 			else
 				rs = st.executeQuery();
 			return (dbPoolConn) this;
@@ -105,9 +109,8 @@ public class dbPrepared {
 	}
 
 
-	// result set
-	protected ResultSet rs = null;
-	public boolean Next() {
+	// has next row
+	public boolean hasNext() {
 		if(rs == null) return false;
 		try {
 			return rs.next();
@@ -116,6 +119,18 @@ public class dbPrepared {
 			return false;
 		}
 	}
+	// row count
+	public int getCount() {
+		if(rs == null) return -1;
+		return count;
+//		try {
+//			return rs.getFetchSize();
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//			return -1;
+//		}
+	}
+	// get string
 	public String getString(String label) {
 		try {
 			if(rs != null)
@@ -125,6 +140,7 @@ public class dbPrepared {
 		}
 		return null;
 	}
+	// get int
 	public Integer getInt(String label) {
 		try {
 			if(rs != null)
@@ -134,6 +150,7 @@ public class dbPrepared {
 		}
 		return null;
 	}
+	// get double
 	public Double getDouble(String label) {
 		try {
 			if(rs != null)
@@ -143,6 +160,7 @@ public class dbPrepared {
 		}
 		return null;
 	}
+	// get long
 	public Long getLong(String label) {
 		try {
 			if(rs != null)
@@ -152,6 +170,7 @@ public class dbPrepared {
 		}
 		return null;
 	}
+	// get boolean
 	public Boolean getBoolean(String label) {
 		try {
 			if(rs != null)
@@ -167,7 +186,8 @@ public class dbPrepared {
 	public void Cleanup() {
 		st = null;
 		rs = null;
-		isUpdateQuery = false;
+		sql = null;
+		count = -1;
 	}
 
 

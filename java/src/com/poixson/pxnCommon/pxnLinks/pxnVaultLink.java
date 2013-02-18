@@ -34,18 +34,19 @@ public class pxnVaultLink extends pxnTaskThrottled {
 	private HashMap<String, Double> balCache = new HashMap<String, Double>();
 
 
-	public pxnVaultLink factory(pxnPlugin plugin, dbPool pool) {
+	public static pxnVaultLink factory(pxnPlugin plugin) {
 		synchronized(links) {
 			pxnVaultLink vaultLink = null;
 			// check existing link db's
 			for(pxnVaultLink link : links) {
-				if(link.pool.equals(pool)) {
+				//if(link.pool == null) continue;
+				if(link.pool.equals( plugin.getDBPool() )) {
 					vaultLink = link;
 					break;
 				}
 			}
 			if(vaultLink == null) {
-				vaultLink = new pxnVaultLink(plugin, pool);
+				vaultLink = new pxnVaultLink(plugin);
 				links.add(vaultLink);
 			}
 			return vaultLink;
@@ -53,9 +54,9 @@ public class pxnVaultLink extends pxnTaskThrottled {
 	}
 
 
-	public pxnVaultLink(pxnPlugin plugin, dbPool pool) {
+	private pxnVaultLink(pxnPlugin plugin) {
 		super(plugin, "Update Players");
-		this.pool = pool;
+		this.pool = plugin.getDBPool();
 		this.economy = pxnVault.getEconomy(log);
 //TODO:
 setDelay(1);

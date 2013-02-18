@@ -112,7 +112,7 @@ public abstract class pxnPluginObjects extends JavaPlugin {
 
 	// listeners
 	protected PluginManager pm = null;
-	protected void registerListener(Listener listener) {
+	public void registerListener(Listener listener) {
 		if(pm == null)
 			pm = getServer().getPluginManager();
 		pm.registerEvents(listener, this);
@@ -121,6 +121,9 @@ public abstract class pxnPluginObjects extends JavaPlugin {
 
 	// database pool
 	protected dbPool db = null;
+	public dbPool getDBPool() {
+		return db;
+	}
 	public dbPoolConn getConnLock() {
 		if(db == null)
 			return null;

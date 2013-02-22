@@ -28,7 +28,7 @@ public class SignManager implements Listener {
 	private dbPool pool;
 
 	// sign handlers
-	protected List<SignHandler> handlers = new ArrayList<SignHandler>();
+	protected List<SignPlugin> handlers = new ArrayList<SignPlugin>();
 	// signs cache
 	protected HashMap<String, SignDAO> signsCache = new HashMap<String, SignDAO>();
 
@@ -55,6 +55,9 @@ public class SignManager implements Listener {
 			return manager;
 		}
 	}
+	public static SignManager factory(pxnPlugin plugin, SignPlugin handler) {
+		return factory(plugin).addHandler(handler);
+	}
 
 
 	// new db instance
@@ -70,9 +73,10 @@ public class SignManager implements Listener {
 
 
 	// add sign handler
-	public void addHandler(SignHandler handler) {
+	public SignManager addHandler(SignPlugin handler) {
 		if(handler == null) throw new NullPointerException("handler can't be null!");
 		this.handlers.add(handler);
+		return this;
 	}
 
 
@@ -81,11 +85,10 @@ public class SignManager implements Listener {
 	public void onSignChange(SignChangeEvent event) {
 		if(event.isCancelled()) return;
 		// validate sign
-		for(SignHandler handler : handlers) {
+		for(SignPlugin handler : handlers) {
 			// sign created
 			if(handler.ValidateSign(event))
 				break;
-			// sign cancelled
 			if(event.isCancelled())
 				return;
 		}

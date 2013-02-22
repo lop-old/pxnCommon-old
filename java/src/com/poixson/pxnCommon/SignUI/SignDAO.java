@@ -4,6 +4,8 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.SignChangeEvent;
 
+import com.poixson.pxnCommon.pxnUtils;
+
 
 public class SignDAO {
 
@@ -73,7 +75,7 @@ public class SignDAO {
 		// line aliases
 		for(String l : setLineAliases) {
 			if(line.equalsIgnoreCase(l)) {
-				event.setLine(lineNumber, setLine);
+				event.setLine(lineNumber, pxnUtils.ReplaceColors(setLine));
 				return true;
 			}
 		}

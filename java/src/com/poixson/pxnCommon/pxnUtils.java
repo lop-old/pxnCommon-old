@@ -97,6 +97,13 @@ public class pxnUtils {
 	}
 
 
+	// format chat colors
+	public static String ReplaceColors(String text){
+		if(text == null) return null;
+		return text.replaceAll("&([0-9a-fA-F])", "\247$1");
+	}
+
+
 	// md5
 	public static String MD5(String str) {
 		MessageDigest md = null;

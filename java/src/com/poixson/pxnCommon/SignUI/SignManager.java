@@ -3,6 +3,7 @@ package com.poixson.pxnCommon.SignUI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,6 +32,8 @@ public class SignManager implements Listener {
 	protected List<SignPlugin> handlers = new ArrayList<SignPlugin>();
 	// signs cache
 	protected HashMap<String, SignDAO> signsCache = new HashMap<String, SignDAO>();
+	// no sign cache
+	protected ConcurrentLinkedQueue<String> noSignCache = new ConcurrentLinkedQueue<String>();
 
 
 	// factory
@@ -92,6 +95,10 @@ public class SignManager implements Listener {
 			if(event.isCancelled())
 				return;
 		}
+		// remove from no sign cache
+		RemoveNoSignCache(
+			SignDAO.BlockLocationToString(event.getBlock())
+		);
 //		if(handled) {
 //@SuppressWarnings("unused")
 //SignDAO sign = getSignDAO(
@@ -102,8 +109,9 @@ public class SignManager implements Listener {
 	}
 
 
+//TODO: move this to static SignDAO
 	// get/create sign dao
-	protected SignDAO getSignDAO(String location) {
+	protected SignDAO getSignDAO2(String location) {
 		if(location == null) throw new NullPointerException("location can't be null");
 		SignDAO sign = null;
 		// get from cache
@@ -141,7 +149,9 @@ public class SignManager implements Listener {
 			signsCache.put(location, sign);
 			saveSignDAO(sign);
 		}
-		db.releaseLock();	
+		db.releaseLock();
+		// remove from no sign cache
+		RemoveNoSignCache(location);
 		return sign;
 	}
 	// save sign dao
@@ -157,6 +167,15 @@ public class SignManager implements Listener {
 		db.setString(6, sign.location);
 		db.releaseLock();
 	}
+
+
+	// remove from no sign cache
+	public void RemoveNoSignCache(String location) {
+		if(noSignCache.contains(location))
+			noSignCache.remove(location);
+	}
+
+
 
 
 //		Block block = event.getBlock();

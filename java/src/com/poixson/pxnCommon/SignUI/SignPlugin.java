@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 
 public abstract class SignPlugin extends SignFunctions {
@@ -13,7 +14,7 @@ public abstract class SignPlugin extends SignFunctions {
 	public abstract void InvalidSign(SignChangeEvent event);
 
 	// sign types
-	protected List<SignType> signTypes = new ArrayList<SignType>();
+	protected final List<SignType> signTypes = new ArrayList<SignType>();
 
 
 	// add sign handler
@@ -24,17 +25,30 @@ public abstract class SignPlugin extends SignFunctions {
 
 
 	// validate sign lines
-	public boolean ValidateSign(SignChangeEvent event) {
+	@Override
+	public String onCreateSign(SignChangeEvent event) {
 		// plugin handles this sign
-		if(this.ValidateSignFirst(event)) {
-			for(SignType sign : signTypes) {
-				if(sign.ValidateSign(event))
-					return true;
-			}
-			// invalid sign
-			InvalidSign(event);
+		if(!this.ValidateSignFirst(event))
+			return null;
+		String type = null;
+		for(SignType sign : signTypes) {
+			type = sign.onCreateSign(event);
+			if(type != null)
+				return type;
 		}
-		return false;
+		// invalid sign
+		InvalidSign(event);
+		return null;
+	}
+
+
+	// sign clicked
+	@Override
+	public void onClick(PlayerInteractEvent event, SignDAO sign) {
+		if(event == null) throw new NullPointerException("event can't be null!");
+		for(SignType type : signTypes)
+			if(type.typeEquals(sign))
+				type.onClick(event, sign);
 	}
 
 

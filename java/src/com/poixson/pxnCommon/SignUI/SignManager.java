@@ -1,39 +1,38 @@
 package com.poixson.pxnCommon.SignUI;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.poixson.pxnCommon.BukkitPlugin.pxnPlugin;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 import com.poixson.pxnCommon.dbPool.dbPool;
-import com.poixson.pxnCommon.dbPool.dbPoolConn;
 
 
 public class SignManager implements Listener {
 	protected static final String CONTAINER_NAME = "Sign-Manager";
 
 	// instances
-	private static List<SignManager> managers = new ArrayList<SignManager>();
+	private static final List<SignManager> managers = new ArrayList<SignManager>();
 
 	// logger
 	protected final pxnLogger log;
 	protected final String pluginName;
 	// database
-	private dbPool pool;
+	protected final dbPool pool;
 
 	// sign handlers
-	protected List<SignPlugin> handlers = new ArrayList<SignPlugin>();
+	protected final List<SignPlugin> handlers = new ArrayList<SignPlugin>();
 	// signs cache
-	protected HashMap<String, SignDAO> signsCache = new HashMap<String, SignDAO>();
-	// no sign cache
-	protected ConcurrentLinkedQueue<String> noSignCache = new ConcurrentLinkedQueue<String>();
+	protected final SignDAOGroup signCache;
 
 
 	// factory
@@ -69,6 +68,8 @@ public class SignManager implements Listener {
 		this.log = plugin.getLog();
 		this.pluginName = plugin.getPluginName();
 		this.pool = plugin.getDBPool();
+		// signs cache
+		signCache = new SignDAOGroup(plugin);
 		// register listener
 		plugin.registerListener(this);
 		log.info(CONTAINER_NAME, "Loaded sign manager");
@@ -87,109 +88,21 @@ public class SignManager implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onSignChange(SignChangeEvent event) {
 		if(event.isCancelled()) return;
+		String type = null;
 		// validate sign
 		for(SignPlugin handler : handlers) {
+			// create new sign
+			type = handler.onCreateSign(event);
+			if(event.isCancelled()) return;
 			// sign created
-			if(handler.ValidateSign(event))
-				break;
-			if(event.isCancelled())
-				return;
+			if(type != null) break;
 		}
-		// remove from no sign cache
-		RemoveNoSignCache(
-			SignDAO.BlockLocationToString(event.getBlock())
-		);
-//		if(handled) {
-//@SuppressWarnings("unused")
-//SignDAO sign = getSignDAO(
-//				SignDAO.BlockLocationToString(event.getBlock())
-//			);
-//			saveSignDAO(sign);
-//		}
+		String location = SignDAO.BlockLocationToString(event.getBlock());
+		// add to db / cache
+		signCache.getNewSignDAO(location, type);
 	}
 
 
-//TODO: move this to static SignDAO
-	// get/create sign dao
-	protected SignDAO getSignDAO2(String location) {
-		if(location == null) throw new NullPointerException("location can't be null");
-		SignDAO sign = null;
-		// get from cache
-		if(signsCache.containsKey(location))
-			sign = signsCache.get(location);
-		// get from db
-		dbPoolConn db = pool.getConnLock();
-		if(sign == null) {
-			db.Prepare("SELECT `sign_id`, `location`, `line1`, `line2`, `line3`, `line4`, `owner` FROM `pxn_Signs` WHERE `location` = ? LIMIT 1");
-			db.setString(1, location);
-			db.Exec();
-			if(db.hasNext()) {
-				sign = new SignDAO(
-					db.getInt("sign_id"),
-					db.getString("location")
-				);
-				sign.setLine(1, db.getString("line1") );
-				sign.setLine(2, db.getString("line2") );
-				sign.setLine(3, db.getString("line3") );
-				sign.setLine(4, db.getString("line4") );
-				sign.setOwner( db.getString("owner") );
-				signsCache.put(location, sign);
-			}
-		}
-		// create new
-		if(sign == null) {
-			db.Cleanup();
-			db.Prepare("INSERT INTO `pxn_Signs` (`location`, `line1`, `line2`, `line3`, `line4`, `owner`) VALUES (?, NULL, NULL, NULL, NULL, NULL)");
-			db.setString(1, location);
-			db.Exec();
-			sign = new SignDAO(
-				db.getInsertId(),
-				location
-			);
-			signsCache.put(location, sign);
-			saveSignDAO(sign);
-		}
-		db.releaseLock();
-		// remove from no sign cache
-		RemoveNoSignCache(location);
-		return sign;
-	}
-	// save sign dao
-	protected void saveSignDAO(SignDAO sign) {
-		if(sign == null) throw new NullPointerException("sign can't be null!");
-		dbPoolConn db = pool.getConnLock();
-		db.Prepare("UPDATE `pxn_Signs` SET `line1` = ?, `line2` = ?, `line3` = ?, `line4` = ?, `owner` = ? WHERE `location` = ? LIMIT 1");
-		db.setString(1, sign.line1);
-		db.setString(2, sign.line2);
-		db.setString(3, sign.line3);
-		db.setString(4, sign.line4);
-		db.setString(5, sign.owner);
-		db.setString(6, sign.location);
-		db.releaseLock();
-	}
-
-
-	// remove from no sign cache
-	public void RemoveNoSignCache(String location) {
-		if(noSignCache.contains(location))
-			noSignCache.remove(location);
-	}
-
-
-
-
-//		Block block = event.getBlock();
-//		World world = block.getWorld();
-//		Player p = event.getPlayer();
-//		if(p == null) return;
-//		if(!handler.ValidateLines(event)) {
-//		}
-
-//		if(!lines[0].equalsIgnoreCase("[WebAuction]") &&
-//			!lines[0].equalsIgnoreCase("[WebAuction+]") &&
-//			!lines[0].equalsIgnoreCase("[wa]") ) return;
-//		event.setLine(0, "[WebAuction+]");
-//
 //		// Shout sign
 //		if(lines[1].equalsIgnoreCase("Shout")) {
 //			if(!p.hasPermission("wa.create.sign.shout")) {
@@ -274,6 +187,69 @@ public class SignManager implements Listener {
 //		db.releaseLock();
 //		return (count > 0);
 //	}
+
+
+	// player interact
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onPlayerInteract(PlayerInteractEvent event) {
+		// right click only
+		if( event.getAction() != Action.RIGHT_CLICK_BLOCK &&
+			event.getAction() != Action.RIGHT_CLICK_AIR)
+				return;
+		Block block = event.getClickedBlock();
+		// not a sign
+		if(block == null) return;
+		if( block.getType() != Material.SIGN_POST &&
+			block.getType() != Material.WALL_SIGN)
+				return;
+		// is valid sign
+		String location = SignDAO.BlockLocationToString(block);
+		SignDAO sign = signCache.getSignDAO(location);
+		if(sign == null) return;
+		// it's our sign
+		event.setCancelled(true);
+		for(SignPlugin signPlugin : handlers)
+			signPlugin.onClick(event, sign);
+//		Sign signBlock = (Sign) block.getState();
+//		String location = SignDAO.BlockLocationToString(block);
+//		SignDAO sign = signCache.getSignDAO(location);
+//		String[] lines = sign.getLines();
+//		if(!lines[0].equals("[WebAuction+]")) return;
+//		// get player info
+//		Player p = event.getPlayer();
+//		String player = p.getName();
+//
+//		// prevent click spamming signs
+//		if(plugin.lastSignUse.containsKey(player))
+//			if( plugin.lastSignUse.get(player)+(long)plugin.signDelay > WebAuctionPlus.getCurrentMilli() ) {
+//				p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("please_wait"));
+//				return;
+//			}
+//		plugin.lastSignUse.put(player, WebAuctionPlus.getCurrentMilli());
+//
+//		// Shout sign
+//		if(lines[1].equals("Shout")) {
+//			clickSignShout(block.getLocation());
+//			return;
+//		}
+//
+//		// Mailbox (items)
+//		if(lines[1].equals("MailBox")) {
+//			if(!p.hasPermission("wa.use.mailbox")) {
+//				p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("no_permission"));
+//				return;
+//			}
+//			// disallow creative
+//			if(p.getGameMode() != GameMode.SURVIVAL && !p.isOp()) {
+//				p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("no_cheating"));
+//				return;
+//			}
+//			// load virtual chest
+//			WebInventory.onInventoryOpen(p);
+//			return;
+//		}
+
+	}
 
 
 }

@@ -99,7 +99,7 @@ public class SignManager implements Listener {
 		}
 		String location = SignDAO.BlockLocationToString(event.getBlock());
 		// add to db / cache
-		signCache.getNewSignDAO(location, type);
+		signCache.getNewSignDAO(location, type, event.getPlayer().getName());
 	}
 
 

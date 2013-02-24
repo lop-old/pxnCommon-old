@@ -8,6 +8,7 @@ public class SignDAO {
 
 	protected final int id;
 	protected final String location;
+	protected final String type;
 	protected String line1 = null;
 	protected String line2 = null;
 	protected String line3 = null;
@@ -15,9 +16,10 @@ public class SignDAO {
 	protected String owner = null;
 
 
-	protected SignDAO(int id, String location) {
+	protected SignDAO(int id, String location, String type) {
 		this.id = id;
 		this.location = location;
+		this.type = type;
 	}
 
 
@@ -55,6 +57,17 @@ public class SignDAO {
 			this.line4 = line;
 		else
 			throw new IllegalArgumentException("Line number "+Integer.toString(lineNumber)+" is out of bounds! 1-4 only.");
+	}
+
+
+	public String getType() {
+		return type;
+	}
+
+
+	// owner
+	public String getOwner() {
+		return owner;
 	}
 	public void setOwner(String owner) {
 		this.owner = owner;

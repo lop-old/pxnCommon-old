@@ -11,6 +11,8 @@ import com.poixson.pxnCommon.dbPool.dbPoolConn;
 
 public class SignDAOGroup {
 
+	private boolean CheckOwnerEnabled = false;
+
 	// signs cache
 	private final HashMap<String, SignDAO> signCache = new HashMap<String, SignDAO>();
 	// no sign cache
@@ -28,9 +30,9 @@ public class SignDAOGroup {
 
 	// get sign dao
 	public SignDAO getSignDAO(String location) {
-		return getSignDAO(location, null);
+		return getSignDAO(location, null, null);
 	}
-	public SignDAO getSignDAO(String location, String type) {
+	public SignDAO getSignDAO(String location, String type, String owner) {
 		if(location == null) throw new NullPointerException("location can't be null");
 		// get from cache
 		if(signCache.containsKey(location)) {
@@ -39,6 +41,13 @@ public class SignDAOGroup {
 			if(type != null) {
 				if(!type.equalsIgnoreCase(sign.getType())) {
 log.warning("Sign type changed! sign is [ "+type+" ] but is set to [ "+sign.getType()+" ] in the cache!");
+					return null;
+				}
+			}
+			// check sign owner
+			if(CheckOwnerEnabled && owner != null) {
+				if(!owner.equalsIgnoreCase(sign.getOwner())) {
+log.warning("Sign not owned by you! owned by [ "+sign.getOwner()+" ] but is being changed by [ "+owner+" ]");
 					return null;
 				}
 			}
@@ -75,21 +84,22 @@ log.warning("Sign type changed! sign is [ "+type+" ] but is set to [ "+db.getStr
 		return null;
 	}
 	// get/create sign dao
-	public SignDAO getNewSignDAO(String location, String type) {
+	public SignDAO getNewSignDAO(String location, String type, String owner) {
 		if(location == null) throw new NullPointerException("location can't be null");
-		SignDAO sign = getSignDAO(location, type);
+		SignDAO sign = getSignDAO(location, type, owner);
 		if(sign == null)
-			return createSignDAO(location, type);
+			return createSignDAO(location, type, owner);
 		return sign;
 	}
 	// create new sign dao
-	private SignDAO createSignDAO(String location, String type) {
+	private SignDAO createSignDAO(String location, String type, String owner) {
 		if(location == null) throw new NullPointerException("location can't be null");
 		dbPoolConn db = pool.getConnLock();
 		db.Cleanup();
-		db.Prepare("INSERT INTO `pxn_Signs` (`location`, `sign_type`, `line1`, `line2`, `line3`, `line4`, `owner`) VALUES (?, ?, NULL, NULL, NULL, NULL, NULL)");
+		db.Prepare("INSERT INTO `pxn_Signs` (`location`, `sign_type`, `line1`, `line2`, `line3`, `line4`, `owner`) VALUES (?, ?, NULL, NULL, NULL, NULL, ?)");
 		db.setString(1, location);
 		db.setString(2, type);
+		db.setString(3, owner);
 		db.Exec();
 		SignDAO sign = new SignDAO(
 			db.getInsertId(),

@@ -2,13 +2,17 @@ package com.poixson.pxnCommon.SignUI;
 
 import org.bukkit.GameMode;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.poixson.pxnCommon.pxnUtils;
 
 
 public abstract class SignFunctions {
 
-	public abstract boolean ValidateSign(SignChangeEvent event);
+	// sign clicked
+	public abstract void onClick(PlayerInteractEvent event, SignDAO sign);
+	// create sign
+	public abstract String onCreateSign(SignChangeEvent event);
 
 
 	// set sign line

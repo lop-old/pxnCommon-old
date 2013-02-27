@@ -1,6 +1,7 @@
 package com.poixson.pxnCommon.SignUI;
 
 import org.bukkit.GameMode;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
@@ -10,9 +11,11 @@ import com.poixson.pxnCommon.pxnUtils;
 public abstract class SignFunctions {
 
 	// sign clicked
-	public abstract void onClick(PlayerInteractEvent event, SignDAO sign);
+	public abstract void onSignClick(PlayerInteractEvent event, SignDAO sign);
 	// create sign
-	public abstract String onCreateSign(SignChangeEvent event);
+	public abstract String onSignCreate(SignChangeEvent event);
+	// remove sign
+	public abstract void onSignRemove(BlockBreakEvent event, SignDAO sign);
 
 
 	// set sign line

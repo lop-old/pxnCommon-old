@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
@@ -84,111 +85,6 @@ public class SignManager implements Listener {
 	}
 
 
-	// new sign event
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onSignChange(SignChangeEvent event) {
-		if(event.isCancelled()) return;
-		String type = null;
-		// validate sign
-		for(SignPlugin handler : handlers) {
-			// create new sign
-			type = handler.onCreateSign(event);
-			if(event.isCancelled()) return;
-			// sign created
-			if(type != null) break;
-		}
-		String location = SignDAO.BlockLocationToString(event.getBlock());
-		// add to db / cache
-		signCache.getNewSignDAO(location, type, event.getPlayer().getName());
-	}
-
-
-//		// Shout sign
-//		if(lines[1].equalsIgnoreCase("Shout")) {
-//			if(!p.hasPermission("wa.create.sign.shout")) {
-//				NoPermission(event);
-//				return;
-//			}
-//			event.setLine(1, "Shout");
-//			// line 2: radius
-//			int radius = 20;
-//			try {
-//				radius = Integer.parseInt(lines[2]);
-//			} catch (NumberFormatException ignore) {}
-//			event.setLine(2, Integer.toString(radius));
-//			event.setLine(3, "");
-//			plugin.shoutSigns.put(sign.getLocation(), radius);
-//			WebAuctionPlus.dataQueries.createShoutSign(world, radius, sign.getX(), sign.getY(), sign.getZ());
-//			p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("created_shout_sign"));
-//			return;
-//		}
-
-
-//	// block break event
-//	@EventHandler(priority = EventPriority.LOWEST)
-//	public void onBlockBreak(BlockBreakEvent event) {
-//		if(event.isCancelled()) return;
-//		Block block = event.getBlock();
-//		Player p = event.getPlayer();
-//		// block is sign
-//		if(block.getType() == Material.SIGN || block.getType() == Material.SIGN_POST) {
-//			//Sign sign = (Sign) block.getState();
-//			// sign exists in db
-//			if(dbSignExists(block)) {
-//				// has permission
-//				if(p.hasPermission("wa.sign.remove")) {
-//					dbSignRemove(block);
-//p.sendMessage("sign removed");
-//log.info("sign removed");
-//				// no permission
-//				} else {
-//					event.setCancelled(true);
-//p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("no_permission"));
-//p.sendMessage("no permission to break sign");
-//				}
-//			}
-//			return;
-//		}
-//		if() {
-//TODO: if block face contains sign
-//		}
-//	}
-
-
-//	// sign exists in db
-//	protected boolean dbSignExists(Block block) {
-//		return dbSignExists(LocationToString(block));
-//	}
-//	protected boolean dbSignExists(String location) {
-//		if(location == null) throw new NullPointerException("location can't be null!");
-//		dbPoolConn db = pool.getConnLock();
-//		db.Prepare("SELECT COUNT(*) AS `count` FROM `pxn_Signs` WHERE `location` = ? LIMIT 1");
-//		db.setString(1, location);
-//		db.Exec();
-//		int count = -1;
-//		if(db.hasNext())
-//			count = db.getInt("count");
-//		db.releaseLock();
-//		return (count > 0);
-//	}
-
-
-//	// remove sign from db
-//	protected boolean dbSignRemove(Block block) {
-//		return dbSignRemove(LocationToString(block));
-//	}
-//	protected boolean dbSignRemove(String location) {
-//		if(location == null) throw new NullPointerException("location can't be null!");
-//		dbPoolConn db = pool.getConnLock();
-//		db.Prepare("DELETE FROM `pxn_Signs` WHERE `location` = ? LIMIT 1");
-//		db.setString(1, location);
-//		db.Exec();
-//		int count = db.getCount();
-//		db.releaseLock();
-//		return (count > 0);
-//	}
-
-
 	// player interact
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onPlayerInteract(PlayerInteractEvent event) {
@@ -209,7 +105,7 @@ public class SignManager implements Listener {
 		// it's our sign
 		event.setCancelled(true);
 		for(SignPlugin signPlugin : handlers)
-			signPlugin.onClick(event, sign);
+			signPlugin.onSignClick(event, sign);
 //		Sign signBlock = (Sign) block.getState();
 //		String location = SignDAO.BlockLocationToString(block);
 //		SignDAO sign = signCache.getSignDAO(location);
@@ -250,6 +146,111 @@ public class SignManager implements Listener {
 //		}
 
 	}
+
+
+	// new sign event
+	@EventHandler(priority = EventPriority.NORMAL)
+	public void onSignChange(SignChangeEvent event) {
+		if(event.isCancelled()) return;
+		String type = null;
+		// validate sign
+		for(SignPlugin handler : handlers) {
+			// create new sign
+			type = handler.onSignCreate(event);
+			if(event.isCancelled()) return;
+			// sign created
+			if(type != null) break;
+		}
+		String location = SignDAO.BlockLocationToString(event.getBlock());
+		// add to db / cache
+		signCache.getNewSignDAO(location, type, event.getPlayer().getName());
+	}
+
+
+//		// Shout sign
+//		if(lines[1].equalsIgnoreCase("Shout")) {
+//			if(!p.hasPermission("wa.create.sign.shout")) {
+//				NoPermission(event);
+//				return;
+//			}
+//			event.setLine(1, "Shout");
+//			// line 2: radius
+//			int radius = 20;
+//			try {
+//				radius = Integer.parseInt(lines[2]);
+//			} catch (NumberFormatException ignore) {}
+//			event.setLine(2, Integer.toString(radius));
+//			event.setLine(3, "");
+//			plugin.shoutSigns.put(sign.getLocation(), radius);
+//			WebAuctionPlus.dataQueries.createShoutSign(world, radius, sign.getX(), sign.getY(), sign.getZ());
+//			p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("created_shout_sign"));
+//			return;
+//		}
+
+
+	// block break event
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onBlockBreak(BlockBreakEvent event) {
+		if(event.isCancelled()) return;
+		SignDAO sign = null;
+		for(SignPlugin handler : handlers) {
+			handler.onSignRemove(event, sign);
+		}
+
+
+//		// right click only
+//		if( event.getAction() != Action.RIGHT_CLICK_BLOCK &&
+//			event.getAction() != Action.RIGHT_CLICK_AIR)
+//				return;
+//		Block block = event.getClickedBlock();
+//		// not a sign
+//		if(block == null) return;
+//		if( block.getType() != Material.SIGN_POST &&
+//			block.getType() != Material.WALL_SIGN)
+//				return;
+//		// is valid sign
+//		String location = SignDAO.BlockLocationToString(block);
+//		SignDAO sign = signCache.getSignDAO(location);
+//		if(sign == null) return;
+//		// it's our sign
+//		event.setCancelled(true);
+//		for(SignPlugin signPlugin : handlers)
+//			signPlugin.onSignClick(event, sign);
+	}
+
+
+//	// sign exists in db
+//	protected boolean dbSignExists(Block block) {
+//		return dbSignExists(LocationToString(block));
+//	}
+//	protected boolean dbSignExists(String location) {
+//		if(location == null) throw new NullPointerException("location can't be null!");
+//		dbPoolConn db = pool.getConnLock();
+//		db.Prepare("SELECT COUNT(*) AS `count` FROM `pxn_Signs` WHERE `location` = ? LIMIT 1");
+//		db.setString(1, location);
+//		db.Exec();
+//		int count = -1;
+//		if(db.hasNext())
+//			count = db.getInt("count");
+//		db.releaseLock();
+//		return (count > 0);
+//	}
+
+
+//	// remove sign from db
+//	protected boolean dbSignRemove(Block block) {
+//		return dbSignRemove(LocationToString(block));
+//	}
+//	protected boolean dbSignRemove(String location) {
+//		if(location == null) throw new NullPointerException("location can't be null!");
+//		dbPoolConn db = pool.getConnLock();
+//		db.Prepare("DELETE FROM `pxn_Signs` WHERE `location` = ? LIMIT 1");
+//		db.setString(1, location);
+//		db.Exec();
+//		int count = db.getCount();
+//		db.releaseLock();
+//		return (count > 0);
+//	}
 
 
 }

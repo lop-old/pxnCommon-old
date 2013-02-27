@@ -11,11 +11,11 @@ import com.poixson.pxnCommon.pxnUtils;
 public abstract class SignFunctions {
 
 	// sign clicked
-	public abstract void onSignClick(PlayerInteractEvent event, SignDAO sign);
+	public abstract boolean onSignClick(PlayerInteractEvent event, SignDAO sign);
 	// create sign
 	public abstract String onSignCreate(SignChangeEvent event);
 	// remove sign
-	public abstract void onSignRemove(BlockBreakEvent event, SignDAO sign);
+	public abstract boolean onSignRemove(BlockBreakEvent event, SignDAO sign);
 
 
 	// set sign line

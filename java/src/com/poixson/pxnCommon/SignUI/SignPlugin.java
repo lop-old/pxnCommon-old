@@ -26,11 +26,14 @@ public abstract class SignPlugin extends SignFunctions {
 
 	// sign clicked
 	@Override
-	public void onSignClick(PlayerInteractEvent event, SignDAO sign) {
+	public boolean onSignClick(PlayerInteractEvent event, SignDAO sign) {
 		if(event == null) throw new NullPointerException("event can't be null!");
-		for(SignType type : signTypes)
+		for(SignType type : signTypes) {
 			if(type.typeEquals(sign))
-				type.onSignClick(event, sign);
+				if(type.onSignClick(event, sign))
+					return true;
+		}
+		return false;
 	}
 
 
@@ -52,13 +55,15 @@ public abstract class SignPlugin extends SignFunctions {
 	}
 
 
-	// sign clicked
+	// sign removed
 	@Override
-	public void onSignRemove(BlockBreakEvent event, SignDAO sign) {
+	public boolean onSignRemove(BlockBreakEvent event, SignDAO sign) {
 		if(event == null) throw new NullPointerException("event can't be null!");
 		for(SignType type : signTypes)
 			if(type.typeEquals(sign))
-				type.onSignRemove(event, sign);
+				if(type.onSignRemove(event, sign))
+					return true;
+		return false;
 	}
 
 

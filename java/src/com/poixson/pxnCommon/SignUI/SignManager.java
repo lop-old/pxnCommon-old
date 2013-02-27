@@ -88,6 +88,7 @@ public class SignManager implements Listener {
 	// player interact
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onPlayerInteract(PlayerInteractEvent event) {
+		if(event.isCancelled()) return;
 		// right click only
 		if( event.getAction() != Action.RIGHT_CLICK_BLOCK &&
 			event.getAction() != Action.RIGHT_CLICK_AIR)
@@ -103,9 +104,13 @@ public class SignManager implements Listener {
 		SignDAO sign = signCache.getSignDAO(location);
 		if(sign == null) return;
 		// it's our sign
+		for(SignPlugin signPlugin : handlers) {
+			if(signPlugin.onSignClick(event, sign))
+				break;
+			if(event.isCancelled())
+				break;
+		}
 		event.setCancelled(true);
-		for(SignPlugin signPlugin : handlers)
-			signPlugin.onSignClick(event, sign);
 //		Sign signBlock = (Sign) block.getState();
 //		String location = SignDAO.BlockLocationToString(block);
 //		SignDAO sign = signCache.getSignDAO(location);
@@ -157,9 +162,9 @@ public class SignManager implements Listener {
 		for(SignPlugin handler : handlers) {
 			// create new sign
 			type = handler.onSignCreate(event);
-			if(event.isCancelled()) return;
 			// sign created
-			if(type != null) break;
+			if(event.isCancelled() || type != null)
+				break;
 		}
 		String location = SignDAO.BlockLocationToString(event.getBlock());
 		// add to db / cache
@@ -194,28 +199,13 @@ public class SignManager implements Listener {
 		if(event.isCancelled()) return;
 		SignDAO sign = null;
 		for(SignPlugin handler : handlers) {
-			handler.onSignRemove(event, sign);
+			if(handler.onSignRemove(event, sign)) {
+				event.setCancelled(true);
+				break;
+			}
+			if(event.isCancelled())
+				return;
 		}
-
-
-//		// right click only
-//		if( event.getAction() != Action.RIGHT_CLICK_BLOCK &&
-//			event.getAction() != Action.RIGHT_CLICK_AIR)
-//				return;
-//		Block block = event.getClickedBlock();
-//		// not a sign
-//		if(block == null) return;
-//		if( block.getType() != Material.SIGN_POST &&
-//			block.getType() != Material.WALL_SIGN)
-//				return;
-//		// is valid sign
-//		String location = SignDAO.BlockLocationToString(block);
-//		SignDAO sign = signCache.getSignDAO(location);
-//		if(sign == null) return;
-//		// it's our sign
-//		event.setCancelled(true);
-//		for(SignPlugin signPlugin : handlers)
-//			signPlugin.onSignClick(event, sign);
 	}
 
 

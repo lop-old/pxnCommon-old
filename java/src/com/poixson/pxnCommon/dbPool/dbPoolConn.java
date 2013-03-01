@@ -4,9 +4,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.poixson.pxnCommon.pxnUtils;
+import com.poixson.pxnCommon.Logger.pxnLogger;
 
 
 public class dbPoolConn extends dbPrepared {
+
+	// connection id
+	private static int nextId = 0;
+	private final int id;
 
 	protected dbPool parent;
 	protected Boolean inUse = false;
@@ -18,6 +23,7 @@ public class dbPoolConn extends dbPrepared {
 	public dbPoolConn(dbPool parent, dbConfig config) {
 		if(parent == null) throw new NullPointerException("parent can't be null!");
 		if(config == null) throw new NullPointerException("dbConfig can't be null!");
+		this.id = getNextId();
 		this.parent = parent;
 		this.config = config;
 		// connect to database
@@ -26,17 +32,33 @@ public class dbPoolConn extends dbPrepared {
 
 
 	public void releaseLock() {
+		Cleanup();
 		inUse = false;
 	}
 
 
+	// get in use
 	public boolean inUse() {
 		return inUse;
+	}
+	// set in use
+	public boolean getUse() {
+		synchronized(inUse) {
+			if(inUse)
+				return false;
+			inUse = true;
+			return true;
+		}
+	}
+	// has error / disconnected
+	public boolean hasError() {
+		return (conn == null);
 	}
 
 
 	protected void _Connect() {
-		if(parent.hasFailed()) return;
+		// plugin disabled
+		if(parent.plugin.okEquals(false)) return;
 		// already connected
 		try {
 			if(conn != null)
@@ -46,7 +68,7 @@ public class dbPoolConn extends dbPrepared {
 			return;
 		}
 		try {
-			parent.log.info("db", "Making a new MySQL connection..");
+			parent.log.info("db", "Making new db connection.. [ "+Integer.toString(getId())+" ]");
 			conn = config.Connect();
 			if(conn == null || conn.isClosed()) {
 				parent.plugin.errorMsg("There was a problem getting the MySQL connection!!!");
@@ -91,6 +113,23 @@ public class dbPoolConn extends dbPrepared {
 	 */
 	public Connection getConn() {
 		return conn;
+	}
+
+
+	@Override
+	protected pxnLogger getLog() {
+		return parent.log;
+	}
+
+
+	// connection id
+	public static int getNextId() {
+		int id = nextId;
+		nextId++;
+		return id;
+	}
+	public int getId() {
+		return id;
 	}
 
 

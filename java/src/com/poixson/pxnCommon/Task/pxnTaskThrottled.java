@@ -24,7 +24,7 @@ public abstract class pxnTaskThrottled extends pxnTask {
 
 	@Override
 	public pxnTask Start() {
-System.out.println("start1");
+//log.debug(CONTAINER_NAME, "Starting: "+this.taskName);
 		return super.Start();
 	}
 

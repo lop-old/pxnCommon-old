@@ -13,25 +13,25 @@ public class pxnLogger {
 		if(prefix == null) throw new NullPointerException("prefix can't be null!");
 		console = new FormatConsole(prefix);
 	}
-	public static pxnLogger clone(pxnLogger logCloning) {
-		if(logCloning == null) throw new NullPointerException("logCloning can't be null!");
-		pxnLogger newLog = new pxnLogger(logCloning.console.getPrefix());
-		return newLog;
-	}
+//	public static pxnLogger clone(pxnLogger logCloning) {
+//		if(logCloning == null) throw new NullPointerException("logCloning can't be null!");
+//		pxnLogger newLog = new pxnLogger(logCloning.console.getPrefix());
+//		return newLog;
+//	}
 
 
 	/**
 	 * @param msg
 	 */
 	public void debug(String msg) {
-		sender.info(console.sendMsg(msg));
+		sender.info(console.sendMsg("*"+msg));
 	}
 	/**
 	 * @param container
 	 * @param msg
 	 */
 	public void debug(String container, String msg) {
-		sender.info(console.sendMsg(container, msg));
+		sender.info(console.sendMsg(container, "*"+msg));
 	}
 
 

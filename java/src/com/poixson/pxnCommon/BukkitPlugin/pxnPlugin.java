@@ -57,26 +57,32 @@ public abstract class pxnPlugin extends pxnPluginObjects {
 	@Override
 	public void onDisable() {
 		super.onDisable();
+		this.StopPlugin();
+		setOk(null);
 	}
 
 
 	// plugin name & version
+	@Override
 	public String getPluginFullName() {
 		return getPluginName()+" "+getPluginVersion();
 	}
 
 
 	// plugin version
+	@Override
 	public String getPluginVersion() {
 		return getDescription().getVersion();
 	}
 	// available version
 	protected String availableVersion = null;
+	@Override
 	public String getAvailableVersion() {
 //TODO:
 availableVersion = "1.0";
 		return availableVersion;
 	}
+	@Override
 	public boolean isUpdateAvailable() {
 		String available = getAvailableVersion();
 		if(available == null) return false;
@@ -86,11 +92,13 @@ availableVersion = "1.0";
 
 
 	// severe error messages
+	@Override
 	protected void Message_PluginAlreadyRunning() {
 		errorMsg(getPluginName()+" is already running!!!\nCan't load a second copy of this plugin!!!");
 		throw new IllegalStateException();
 	}
 	// failed to load plugin
+	@Override
 	protected void Message_PluginLoadingFailed() {
 		log.severe(getPluginName()+" failed to load the plugin!!!");
 	}
@@ -103,15 +111,23 @@ availableVersion = "1.0";
 //			return false;
 //		return isOk;
 //	}
+	@Override
 	public boolean okEquals(Boolean isOk) {
+//if(this.isOk == null)
+//System.out.println("ok = null");
+//else if(this.isOk.equals(true))
+//System.out.println("ok =  true");
+//else if(this.isOk.equals(false))
+//System.out.println("ok = false");
 		if(isOk == null)
 			return (this.isOk == null);
 		return isOk.equals(this.isOk);
 	}
 	// set loaded ok
+	@Override
 	protected void setOk(Boolean isOk) {
 		this.isOk = isOk;
-		if(this.isOk== null)
+		if(this.isOk == null)
 			super.setEnabled(false);
 		else
 			super.setEnabled(isOk);
@@ -120,6 +136,7 @@ availableVersion = "1.0";
 
 	// error messages
 	protected List<String> errorMsgs = new ArrayList<String>();
+	@Override
 	public void errorMsg(String msg) {
 		isOk = false;
 		synchronized(errorMsgs) {
@@ -127,6 +144,7 @@ availableVersion = "1.0";
 		}
 		ConsoleAlert(msg);
 	}
+	@Override
 	public String[] errorMsgs() {
 		synchronized(errorMsgs) {
 			return (String[]) errorMsgs.toArray();
@@ -135,6 +153,7 @@ availableVersion = "1.0";
 
 
 	// display single lined message
+	@Override
 	protected void ConsoleAlert(String alert) {
 		// multi-line message
 		if(alert.contains("\n"))
@@ -146,6 +165,7 @@ availableVersion = "1.0";
 		getServer().getConsoleSender().sendMessage(ChatColor.RED+StringUtils.repeat("*", len+8));
 	}
 	// display multi-line message
+	@Override
 	protected void ConsoleAlert(String[] alerts) {
 		int len = 0;
 		// find max length

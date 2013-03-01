@@ -5,13 +5,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.poixson.pxnCommon.Logger.pxnLogger;
 
-public class dbPrepared {
+
+public abstract class dbPrepared {
 
 	protected Connection conn;
 	protected ResultSet rs = null;
 	protected String sql = null;
-	protected int count = -1;
+	protected String args = "";
+	protected boolean quiet = false;
+	protected int resultInt = -1;
+
+	protected abstract pxnLogger getLog();
 
 
 	// prepared statement
@@ -38,6 +44,7 @@ public class dbPrepared {
 		if(st == null) return null;
 		try {
 			st.setString(index, value);
+			args += " String: "+value;
 			return (dbPoolConn) this;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -49,6 +56,7 @@ public class dbPrepared {
 		if(st == null) return null;
 		try {
 			st.setInt(index, value);
+			args += " Int: "+Integer.toString(value);
 			return (dbPoolConn) this;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -60,6 +68,7 @@ public class dbPrepared {
 		if(st == null) return null;
 		try {
 			st.setDouble(index, value);
+			args += " Double: "+Double.toString(value);
 			return (dbPoolConn) this;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -71,6 +80,7 @@ public class dbPrepared {
 		if(st == null) return null;
 		try {
 			st.setLong(index, value);
+			args += " Long: "+Long.toString(value);
 			return (dbPoolConn) this;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -82,6 +92,7 @@ public class dbPrepared {
 		if(st == null) return null;
 		try {
 			st.setBoolean(index, value);
+			args += " Bool: "+Boolean.toString(value);
 			return (dbPoolConn) this;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -95,9 +106,13 @@ public class dbPrepared {
 	public dbPoolConn Exec() {
 		if(st == null) return null;
 		if(sql == null || sql.isEmpty()) return null;
+		if(!quiet)
+			getLog().debug("query", sql+(args.isEmpty() ? "" : "  ["+args+" ]") );
 		try {
-			if(sql.startsWith("UPDATE") || sql.startsWith("DELETE"))
-				count = st.executeUpdate();
+			int i = sql.indexOf(" ");
+			String firstPart = (i==-1 ? sql : sql.substring(0, i) ).toUpperCase();
+			if(firstPart.equals("INSERT") || firstPart.equals("UPDATE") || firstPart.equals("DELETE"))
+				resultInt = st.executeUpdate();
 			else
 				rs = st.executeQuery();
 			return (dbPoolConn) this;
@@ -119,17 +134,22 @@ public class dbPrepared {
 			return false;
 		}
 	}
+
+
 	// row count
-	public int getCount() {
-		if(rs == null) return -1;
-		return count;
-//		try {
-//			return rs.getFetchSize();
-//		} catch (SQLException e) {
-//			e.printStackTrace();
-//			return -1;
-//		}
+	public int getAffectedRows() {
+		return getResultInt();
 	}
+	// insert id
+	public int getInsertId() {
+		return getResultInt();
+	}
+	private int getResultInt() {
+		if(rs == null) return -1;
+		return resultInt;
+	}
+
+
 	// get string
 	public String getString(String label) {
 		try {
@@ -182,12 +202,23 @@ public class dbPrepared {
 	}
 
 
+	// set quiet
+	public void setQuiet() {
+		setQuiet(true);
+	}
+	public void setQuiet(boolean quiet) {
+		this.quiet = quiet;
+	}
+
+
 	// clean up
 	public void Cleanup() {
 		st = null;
 		rs = null;
 		sql = null;
-		count = -1;
+		args = "";
+		quiet = false;
+		resultInt = -1;
 	}
 
 

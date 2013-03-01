@@ -13,13 +13,14 @@ import org.bukkit.entity.Player;
 
 import com.poixson.pxnCommon.pxnVault;
 import com.poixson.pxnCommon.BukkitPlugin.pxnPlugin;
+import com.poixson.pxnCommon.Logger.pxnLogger;
 import com.poixson.pxnCommon.Task.pxnTaskThrottled;
 import com.poixson.pxnCommon.dbPool.dbPool;
 import com.poixson.pxnCommon.dbPool.dbPoolConn;
 
 
 public class pxnVaultLink extends pxnTaskThrottled {
-	private static final String CONTAINER_NAME = "Vault Link";
+	private static final String CONTAINER_NAME = "Vault-Link";
 
 	// instances
 	private static List<pxnVaultLink> links = new ArrayList<pxnVaultLink>();
@@ -37,11 +38,15 @@ public class pxnVaultLink extends pxnTaskThrottled {
 	public static pxnVaultLink factory(pxnPlugin plugin) {
 		synchronized(links) {
 			pxnVaultLink vaultLink = null;
+			dbPool pool = plugin.getDBPool();
 			// check existing link db's
 			for(pxnVaultLink link : links) {
 				//if(link.pool == null) continue;
-				if(link.pool.equals( plugin.getDBPool() )) {
+				// match db
+				if( link.pool.equals(pool) ) {
 					vaultLink = link;
+					// shared logger
+					vaultLink.log = new pxnLogger("pxnCommon");
 					break;
 				}
 			}
@@ -55,12 +60,12 @@ public class pxnVaultLink extends pxnTaskThrottled {
 
 
 	private pxnVaultLink(pxnPlugin plugin) {
-		super(plugin, "Update Players");
+		super(plugin, CONTAINER_NAME);
 		this.pool = plugin.getDBPool();
 		this.economy = pxnVault.getEconomy(log);
 //TODO:
-setDelay(1);
-setPeriod(20);
+setDelay(20*2);
+setPeriod(20*10);
 Start();
 //set task interval
 //set task sleep
@@ -107,6 +112,7 @@ Start();
 					"WHERE `hold` = ? "+
 					"ORDER BY `adjust_id` ASC "+
 					"LIMIT 100");
+			dbLoop.setQuiet(true);
 			dbLoop.setBoolean(1, processHolds);
 			dbLoop.Exec();
 			int count = 0;
@@ -136,6 +142,7 @@ Start();
 					db.setInt(1, adjustId);
 					db.Exec();
 				}
+				db.Cleanup();
 				SleepTaskLoop();
 			}
 			// done
@@ -188,6 +195,7 @@ Start();
 		// query for balance
 		dbPoolConn db = pool.getConnLock();
 		db.Prepare("SELECT `balance` FROM `PSM_Users` WHERE `username` = ? LIMIT 1");
+		db.setQuiet(true);
 		db.setString(1, playerName);
 		db.Exec();
 		if(db.hasNext()) {

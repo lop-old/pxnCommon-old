@@ -24,13 +24,13 @@ public class pxnCommon extends pxnPlugin {
 	// load plugin
 	@Override
 	protected void StartPlugin() {
-		// already successfully loaded
+		// already loaded
 		if(okEquals(true)) {
 			log.info(getPluginName()+" already loaded");
 			return;
 		}
 		// starting plugin
-		getLog().info("Starting..");
+		getLog().info("Starting library..");
 
 		setOk(true);
 	}

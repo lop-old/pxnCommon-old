@@ -1,8 +1,10 @@
 package com.poixson.pxnCommon.dbPool;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import com.poixson.pxnCommon.pxnUtils;
 import com.poixson.pxnCommon.BukkitPlugin.pxnPlugin;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 
@@ -12,7 +14,7 @@ public class dbPool {
 	// plugin
 	protected final pxnPlugin plugin;
 	// logger
-	protected final pxnLogger log;
+	protected pxnLogger log;
 
 	// db config
 	private final dbConfig config;
@@ -25,24 +27,27 @@ public class dbPool {
 	public static dbPool factory(pxnPlugin plugin, dbConfig config) {
 		if(plugin.okEquals(false)) return null;
 		synchronized(staticPools) {
-			dbPool db = null;
+			dbPool pool = null;
 			// check existing pools
-			for(dbPool pool : staticPools) {
-				if(pool.config.equals(config)) {
-					plugin.getLog().info("db", "Using an existing db pool :-)");
-					plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
-					db = pool;
+			for(dbPool p : staticPools) {
+				if(p.config.equals(config)) {
+					pool = p;
+					// shared logger
+					if(pool.log == null)
+						pool.log = new pxnLogger("pxnCommon");
+					pool.log.info("db", "Using an existing db pool :-)");
+					//pool.log.debug("db", "Database pool size: "+Integer.toString(staticPools.size()));
 					break;
 				}
 			}
 			// new pool
-			if(db == null) {
+			if(pool == null) {
 				plugin.getLog().info("db", "Creating a new db pool..");
-				db = new dbPool(plugin, config);
-				staticPools.add(db);
-				plugin.getLog().debug("db", "database pool size: "+Integer.toString(staticPools.size()));
+				pool = new dbPool(plugin, config);
+				staticPools.add(pool);
+				pool.log.debug("db", "Database pool size: "+Integer.toString(staticPools.size()));
 			}
-			return db;
+			return pool;
 		}
 	}
 
@@ -65,34 +70,54 @@ public class dbPool {
 
 
 	public dbPoolConn getConnLock() {
-		if(hasFailed()) return null;
+		// plugin disabled
+		if(plugin.okEquals(false)) return null;
 		synchronized(pool) {
 			dbPoolConn db = null;
 			// check existing connections
-			for(dbPoolConn poolConn : this.pool) {
+			Iterator<dbPoolConn> it = this.pool.iterator();
+			while(it.hasNext()) {
+				dbPoolConn poolConn = it.next();
+				// connection reset or errored
+				if(poolConn.hasError()) {
+					log.severe("db", "Connection [ "+Integer.toString(poolConn.getId())+" ] dropped!!");
+					it.remove();
+					continue;
+				}
 				if(!poolConn.inUse()) {
 					poolConn.inUse = true;
-					plugin.getLog().debug("db", "connection pool size: "+Integer.toString(pool.size()));
+					log.debug("db", "Connection pool size: "+Integer.toString(pool.size()));
 					db = poolConn;
 					break;
 				}
 			}
 			// new connection
 			if(db == null) {
-				db = new dbPoolConn(this, config);
+				// try 5 times max
+				for(int i=0; i<5; i++) {
+					db = new dbPoolConn(this, config);
+					if(!db.hasError())
+						break;
+					db = null;
+					log.severe("db", "Failed to connect to database! Trying again in 1 second..");
+					pxnUtils.Sleep(1000);
+				}
+				// failed to connect to db, disable plugin
+				if(db == null || db.hasError()) {
+					log.severe("db", "Failed to connect to database! Disabling plugin..");
+					plugin.onDisable();
+					return null;
+				}
+				// new connection successful
 				this.pool.add(db);
-				plugin.getLog().debug("db", "connection pool size: "+Integer.toString(pool.size()));
+				log.debug("db", "Connection pool size: "+Integer.toString(pool.size()));
 			}
 			return db;
 		}
 	}
 
 
-	public boolean hasFailed() {
-		return !(plugin.okEquals(null) || plugin.okEquals(true));
-	}
-
-
+//TODO: use or remove this
 //	// get a lock from pool
 //	public MySQLPoolConn getLock() {
 //		// find an available connection

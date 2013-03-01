@@ -12,11 +12,12 @@ import com.poixson.pxnCommon.Logger.pxnLogger;
 
 
 public abstract class pxnTask implements Runnable {
+	protected static final String CONTAINER_NAME = "Task";
 
 	// plugin
 	protected final pxnPlugin plugin;
 	// logger
-	protected final pxnLogger log;
+	protected pxnLogger log;
 	// tasks map
 	protected HashMap<String, pxnTask> tasks;
 	// bukkit scheduler
@@ -48,12 +49,9 @@ public abstract class pxnTask implements Runnable {
 		this.plugin = plugin;
 		this.log = plugin.getLog();
 		this.tasks = plugin.getTaskMap();
-		if(this.tasks == null)
-			this.tasks = new HashMap<String, pxnTask>();
-		if(isThreaded != null)
-			this.isThreaded = isThreaded;
-		if(isLockable != null)
-			this.isLockable = isLockable;
+		if(this.tasks == null) this.tasks = new HashMap<String, pxnTask>();
+		if(isThreaded != null) this.isThreaded = isThreaded;
+		if(isLockable != null) this.isLockable = isLockable;
 		synchronized(lock) {
 			synchronized(this.tasks) {
 				if(this.tasks.containsKey(taskName)) {
@@ -77,12 +75,12 @@ public abstract class pxnTask implements Runnable {
 	// start scheduled task
 	public pxnTask Start() {
 		if(bukkitTask != null) {
-			log.severe("This task has already been started! "+taskName);
-			return null;
+			log.severe(CONTAINER_NAME, "This task has already been started! "+taskName);
+			return this;
 		}
 		if(delay < 1) throw new IllegalArgumentException("delay must be set! task: "+taskName);
 		synchronized(lock) {
-			log.info("Starting scheduled tasks..");
+			log.info(CONTAINER_NAME, "Starting scheduled task [ "+this.taskName+" ]");
 			isActive = true;
 			bukkitTask = newScheduler(plugin, isActive, this, delay, period);
 		}
@@ -223,7 +221,7 @@ public abstract class pxnTask implements Runnable {
 
 	// skip task message
 	protected void SkipTaskMessage() {
-		log.warning("Skipping task - The "+taskName+" task is taking longer to complete than your repeat frequency. Please adjust your config!");
+		log.warning(CONTAINER_NAME, "Skipping task - The "+taskName+" task is taking longer to complete than your repeat frequency. Please adjust your config!");
 	}
 
 

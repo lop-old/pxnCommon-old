@@ -58,8 +58,8 @@ public class SignManager implements Listener {
 			return manager;
 		}
 	}
-	public static SignManager factory(pxnPlugin plugin, SignPlugin handler) {
-		return factory(plugin).addHandler(handler);
+	public static SignManager factory(pxnPlugin plugin, SignPlugin signPlugin) {
+		return factory(plugin).addHandler(signPlugin);
 	}
 
 
@@ -78,14 +78,14 @@ public class SignManager implements Listener {
 
 
 	// add sign handler
-	public SignManager addHandler(SignPlugin handler) {
-		if(handler == null) throw new NullPointerException("handler can't be null!");
-		this.handlers.add(handler);
+	public SignManager addHandler(SignPlugin signPlugin) {
+		if(signPlugin == null) throw new NullPointerException("signPlugin can't be null!");
+		this.handlers.add(signPlugin);
 		return this;
 	}
 
 
-	// player interact
+	// player right-clicked sign
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		if(event.isCancelled()) return;
@@ -100,26 +100,18 @@ public class SignManager implements Listener {
 			block.getType() != Material.WALL_SIGN)
 				return;
 		// is valid sign
-		String location = SignDAO.BlockLocationToString(block);
-		SignDAO sign = signCache.getSignDAO(location);
+		SignDAO sign = signCache.getSignDAO(block);
 		if(sign == null) return;
 		// it's our sign
 		for(SignPlugin signPlugin : handlers) {
 			if(signPlugin.onSignClick(event, sign))
 				break;
 			if(event.isCancelled())
-				break;
+				return;
 		}
 		event.setCancelled(true);
-//		Sign signBlock = (Sign) block.getState();
-//		String location = SignDAO.BlockLocationToString(block);
-//		SignDAO sign = signCache.getSignDAO(location);
-//		String[] lines = sign.getLines();
-//		if(!lines[0].equals("[WebAuction+]")) return;
-//		// get player info
-//		Player p = event.getPlayer();
-//		String player = p.getName();
-//
+
+//TODO: add this
 //		// prevent click spamming signs
 //		if(plugin.lastSignUse.containsKey(player))
 //			if( plugin.lastSignUse.get(player)+(long)plugin.signDelay > WebAuctionPlus.getCurrentMilli() ) {
@@ -127,28 +119,6 @@ public class SignManager implements Listener {
 //				return;
 //			}
 //		plugin.lastSignUse.put(player, WebAuctionPlus.getCurrentMilli());
-//
-//		// Shout sign
-//		if(lines[1].equals("Shout")) {
-//			clickSignShout(block.getLocation());
-//			return;
-//		}
-//
-//		// Mailbox (items)
-//		if(lines[1].equals("MailBox")) {
-//			if(!p.hasPermission("wa.use.mailbox")) {
-//				p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("no_permission"));
-//				return;
-//			}
-//			// disallow creative
-//			if(p.getGameMode() != GameMode.SURVIVAL && !p.isOp()) {
-//				p.sendMessage(WebAuctionPlus.chatPrefix + WebAuctionPlus.Lang.getString("no_cheating"));
-//				return;
-//			}
-//			// load virtual chest
-//			WebInventory.onInventoryOpen(p);
-//			return;
-//		}
 
 	}
 
@@ -159,16 +129,22 @@ public class SignManager implements Listener {
 		if(event.isCancelled()) return;
 		String type = null;
 		// validate sign
-		for(SignPlugin handler : handlers) {
+		for(SignPlugin signPlugin : handlers) {
 			// create new sign
-			type = handler.onSignCreate(event);
+			type = signPlugin.onSignCreate(event);
 			// sign created
-			if(event.isCancelled() || type != null)
+			if(event.isCancelled())
+				return;
+			// success
+			if(type != null)
 				break;
 		}
-		String location = SignDAO.BlockLocationToString(event.getBlock());
 		// add to db / cache
-		signCache.getNewSignDAO(location, type, event.getPlayer().getName());
+		signCache.getNewSignDAO(
+			event.getBlock(),
+			type,
+			event.getPlayer().getName()
+		);
 	}
 
 
@@ -197,50 +173,27 @@ public class SignManager implements Listener {
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onBlockBreak(BlockBreakEvent event) {
 		if(event.isCancelled()) return;
-		SignDAO sign = null;
-		for(SignPlugin handler : handlers) {
-			if(handler.onSignRemove(event, sign)) {
-				event.setCancelled(true);
+		Block block = event.getBlock();
+		// not a sign
+		if(block == null) return;
+		if( block.getType() != Material.SIGN_POST &&
+			block.getType() != Material.WALL_SIGN)
+				return;
+		// is valid sign
+		SignDAO sign = signCache.getSignDAO(block);
+		if(sign == null) return;
+		// it's our sign
+		for(SignPlugin signPlugin : handlers) {
+			// try removing sign
+			if(signPlugin.onSignRemove(event, sign))
 				break;
-			}
+			// cancelled
 			if(event.isCancelled())
 				return;
 		}
+		// remove sign from db/cache
+		signCache.removeSign(event.getBlock());
 	}
-
-
-//	// sign exists in db
-//	protected boolean dbSignExists(Block block) {
-//		return dbSignExists(LocationToString(block));
-//	}
-//	protected boolean dbSignExists(String location) {
-//		if(location == null) throw new NullPointerException("location can't be null!");
-//		dbPoolConn db = pool.getConnLock();
-//		db.Prepare("SELECT COUNT(*) AS `count` FROM `pxn_Signs` WHERE `location` = ? LIMIT 1");
-//		db.setString(1, location);
-//		db.Exec();
-//		int count = -1;
-//		if(db.hasNext())
-//			count = db.getInt("count");
-//		db.releaseLock();
-//		return (count > 0);
-//	}
-
-
-//	// remove sign from db
-//	protected boolean dbSignRemove(Block block) {
-//		return dbSignRemove(LocationToString(block));
-//	}
-//	protected boolean dbSignRemove(String location) {
-//		if(location == null) throw new NullPointerException("location can't be null!");
-//		dbPoolConn db = pool.getConnLock();
-//		db.Prepare("DELETE FROM `pxn_Signs` WHERE `location` = ? LIMIT 1");
-//		db.setString(1, location);
-//		db.Exec();
-//		int count = db.getCount();
-//		db.releaseLock();
-//		return (count > 0);
-//	}
 
 
 }

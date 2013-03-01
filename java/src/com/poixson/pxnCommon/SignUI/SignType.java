@@ -4,7 +4,7 @@ package com.poixson.pxnCommon.SignUI;
 public abstract class SignType extends SignFunctions {
 
 	// sign type
-	public abstract String getType();
+	protected abstract String getType();
 
 //	// sign clicked
 //	public abstract void onClick(PlayerInteractEvent event);
@@ -13,10 +13,10 @@ public abstract class SignType extends SignFunctions {
 
 
 	// sign type equals
-	public boolean typeEquals(SignDAO sign) {
+	protected boolean typeEquals(SignDAO sign) {
 		return typeEquals(sign.getType());
 	}
-	public boolean typeEquals(String type) {
+	protected boolean typeEquals(String type) {
 		if(type == null)
 			return false;
 		return type.equalsIgnoreCase(this.getType());

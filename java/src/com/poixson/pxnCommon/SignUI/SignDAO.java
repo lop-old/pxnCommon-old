@@ -43,7 +43,7 @@ public class SignDAO {
 	}
 
 
-	public void setLine(int lineNumber, String line) {
+	protected void setLine(int lineNumber, String line) {
 		if(lineNumber == 1)
 			this.line1 = line;
 		else
@@ -60,16 +60,16 @@ public class SignDAO {
 	}
 
 
-	public String getType() {
+	protected String getType() {
 		return type;
 	}
 
 
 	// owner
-	public String getOwner() {
+	protected String getOwner() {
 		return owner;
 	}
-	public void setOwner(String owner) {
+	protected void setOwner(String owner) {
 		this.owner = owner;
 	}
 

@@ -30,7 +30,7 @@ public abstract class SignFunctions {
 
 
 	// validate sign line
-	public static boolean ValidLine(SignChangeEvent event, int lineNumber, String setLine, String setLineAliases[]) {
+	protected static boolean ValidLine(SignChangeEvent event, int lineNumber, String setLine, String setLineAliases[]) {
 		String line = event.getLine(lineNumber);
 		if(line == null)
 			return false;

@@ -74,4 +74,12 @@ public class SignDAO {
 	}
 
 
+	// location equals
+	public boolean locationEquals(String location) {
+		if(location == null)
+			return false;
+		return location.equals(this.location);
+	}
+
+
 }

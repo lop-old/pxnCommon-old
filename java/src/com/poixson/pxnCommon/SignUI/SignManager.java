@@ -33,7 +33,7 @@ public class SignManager implements Listener {
 	// sign handlers
 	protected final List<SignPlugin> handlers = new ArrayList<SignPlugin>();
 	// signs cache
-	protected final SignDAOGroup signCache;
+	protected final SignDAOGroup signCacheGroup;
 
 
 	// factory
@@ -70,7 +70,7 @@ public class SignManager implements Listener {
 		this.pluginName = plugin.getPluginName();
 		this.pool = plugin.getDBPool();
 		// signs cache
-		signCache = new SignDAOGroup(plugin);
+		signCacheGroup = new SignDAOGroup(plugin);
 		// register listener
 		plugin.registerListener(this);
 		log.info(CONTAINER_NAME, "Loaded sign manager");
@@ -99,8 +99,12 @@ public class SignManager implements Listener {
 		if( block.getType() != Material.SIGN_POST &&
 			block.getType() != Material.WALL_SIGN)
 				return;
+		String location = SignDAO.BlockLocationToString(block);
+		// no sign cached
+		if(signCacheGroup.hasNoSign(location))
+			return;
 		// is valid sign
-		SignDAO sign = signCache.getSignDAO(block);
+		SignDAO sign = signCacheGroup.getSignDAO(location);
 		if(sign == null) return;
 		// it's our sign
 		for(SignPlugin signPlugin : handlers) {
@@ -136,15 +140,16 @@ public class SignManager implements Listener {
 			if(event.isCancelled())
 				return;
 			// success
-			if(type != null)
-				break;
+			if(type != null) {
+				// add to db / cache
+				signCacheGroup.getNewSignDAO(
+					event.getBlock(),
+					type,
+					event.getPlayer().getName()
+				);
+				return;
+			}
 		}
-		// add to db / cache
-		signCache.getNewSignDAO(
-			event.getBlock(),
-			type,
-			event.getPlayer().getName()
-		);
 	}
 
 
@@ -180,7 +185,7 @@ public class SignManager implements Listener {
 			block.getType() != Material.WALL_SIGN)
 				return;
 		// is valid sign
-		SignDAO sign = signCache.getSignDAO(block);
+		SignDAO sign = signCacheGroup.getSignDAO(block);
 		if(sign == null) return;
 		// it's our sign
 		for(SignPlugin signPlugin : handlers) {
@@ -192,7 +197,7 @@ public class SignManager implements Listener {
 				return;
 		}
 		// remove sign from db/cache
-		signCache.removeSign(event.getBlock());
+		signCacheGroup.removeSign(event.getBlock());
 	}
 
 

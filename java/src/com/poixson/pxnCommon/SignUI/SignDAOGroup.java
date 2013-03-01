@@ -1,6 +1,6 @@
 package com.poixson.pxnCommon.SignUI;
 
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.bukkit.block.Block;
@@ -12,13 +12,15 @@ import com.poixson.pxnCommon.dbPool.dbPoolConn;
 
 
 public class SignDAOGroup {
+	private static final int SIGN_CACHE_SIZE	= 10;
+	private static final int NO_SIGN_CACHE_SIZE	= 10;
 
 	private boolean CheckOwnerEnabled = false;
 
 	// signs cache
-	private final HashMap<String, SignDAO> signCache = new HashMap<String, SignDAO>();
+	private final ConcurrentLinkedQueue<SignDAO> signCache = new ConcurrentLinkedQueue<SignDAO>();
 	// no sign cache
-	protected final ConcurrentLinkedQueue<String> noSignCache = new ConcurrentLinkedQueue<String>();
+	private final ConcurrentLinkedQueue<String> noSignCache = new ConcurrentLinkedQueue<String>();
 
 	private final pxnLogger log;
 	private final dbPool pool;
@@ -38,16 +40,16 @@ public class SignDAOGroup {
 		return getSignDAO(location, null, null);
 	}
 	protected SignDAO getSignDAO(String location, String type, String owner) {
+System.out.println("SignCache: "+Integer.toString(signCache.size()));
+System.out.println("NOSignChe: "+Integer.toString(noSignCache.size()));
 		if(location == null) throw new NullPointerException("location can't be null");
 		SignDAO sign = null;
 		synchronized(signCache) {
 			// get from cache
-			if(signCache.containsKey(location)) {
-				sign = signCache.get(location);
-				// check sign type
-				if(type != null && !type.equalsIgnoreCase(sign.getType()) ) {
-log.warning("Sign type changed! sign is [ "+type+" ] but is set to [ "+sign.getType()+" ] in the cache!");
-					return null;
+			for(SignDAO s : signCache) {
+				if(s.locationEquals(location)) {
+					sign = s;
+					break;
 				}
 			}
 			// get from db
@@ -74,20 +76,31 @@ log.warning("Sign type changed! sign is [ "+type+" ] but is set to [ "+db.getStr
 					sign.setLine(3, db.getString("line3") );
 					sign.setLine(4, db.getString("line4") );
 					sign.setOwner( db.getString("owner") );
-					signCache.put(location, sign);
+					signCache.add(sign);
 				}
 				db.releaseLock();
 			}
+			// no sign found
+			if(sign == null) {
+				addNoSign(location);
+				return null;
+			}
 		}
-		// sign not found
-		if(sign == null)
+		// check sign type
+		if(type != null && !type.equalsIgnoreCase(sign.getType()) ) {
+log.warning("Sign type changed! sign is [ "+type+" ] but is set to [ "+sign.getType()+" ] in the cache!");
 			return null;
+		}
 		// check sign owner
-		if(CheckOwnerEnabled && owner != null
-		&& !owner.equalsIgnoreCase(sign.getOwner()) ) {
+		if(CheckOwnerEnabled) {
+			if(owner != null && !owner.equalsIgnoreCase(sign.getOwner()) ) {
 log.warning("Sign not owned by you! owned by [ "+sign.getOwner()+" ] but is being changed by [ "+owner+" ]");
-			return null;
+				return null;
+			}
 		}
+		// trim cache
+		while(signCache.size() > SIGN_CACHE_SIZE)
+			signCache.poll();
 		return sign;
 	}
 	// get/create sign dao
@@ -104,20 +117,25 @@ log.warning("Sign not owned by you! owned by [ "+sign.getOwner()+" ] but is bein
 	// create new sign dao
 	private SignDAO createSignDAO(String location, String type, String owner) {
 		if(location == null) throw new NullPointerException("location can't be null");
+		SignDAO sign = null;
 		dbPoolConn db = pool.getConnLock();
-		db.Cleanup();
-		db.Prepare("INSERT INTO `pxn_Signs` (`location`, `sign_type`, `line1`, `line2`, `line3`, `line4`, `owner`) VALUES (?, ?, NULL, NULL, NULL, NULL, ?)");
-		db.setString(1, location);
-		db.setString(2, type);
-		db.setString(3, owner);
-		db.Exec();
-		SignDAO sign = new SignDAO(
-			db.getInsertId(),
-			location,
-			type
-		);
-		signCache.put(location, sign);
-		saveSignDAO(sign);
+		synchronized(signCache) {
+			db.Prepare("INSERT INTO `pxn_Signs` (`location`, `sign_type`, `line1`, `line2`, `line3`, `line4`, `owner`) VALUES (?, ?, NULL, NULL, NULL, NULL, ?)");
+			db.setString(1, location);
+			db.setString(2, type);
+			db.setString(3, owner);
+			db.Exec();
+			if(db.getAffectedRows() > 0) {
+				sign = new SignDAO(
+					db.getInsertId(),
+					location,
+					type
+				);
+				signCache.add(sign);
+				saveSignDAO(sign);
+			}
+			removeNoSign(location);
+		}
 		db.releaseLock();
 		return sign;
 	}
@@ -149,21 +167,34 @@ log.warning("Sign not owned by you! owned by [ "+sign.getOwner()+" ] but is bein
 		int count = db.getAffectedRows();
 		db.releaseLock();
 		// remove from cache
-		signCache.remove(location);
+		Iterator<SignDAO> it = signCache.iterator();
+		while(it.hasNext()) {
+			SignDAO sign = it.next();
+			if(sign.locationEquals(location)) {
+				it.remove();
+				break;
+			}
+		}
+		it = null;
 		return (count > 0);
 	}
 
 
 	// add to no-sign cache
-	protected void AddNoSignCache(String location) {
+	private void addNoSign(String location) {
 		noSignCache.add(location);
-		while(noSignCache.size() > 5)
+		// trim cache
+		while(noSignCache.size() > NO_SIGN_CACHE_SIZE)
 			noSignCache.poll();
 	}
 	// remove from no-sign cache
-	protected void RemoveNoSignCache2(String location) {
+	private void removeNoSign(String location) {
 		if(noSignCache.contains(location))
 			noSignCache.remove(location);
+	}
+	// is no-sign cached
+	public boolean hasNoSign(String location) {
+		return noSignCache.contains(location);
 	}
 
 

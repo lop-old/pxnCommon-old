@@ -1,4 +1,4 @@
-package com.poixson.pxnCommon.dbPool;
+package com.poixson.pxnCommon.pxdb;
 
 import java.util.ArrayList;
 import java.util.Iterator;

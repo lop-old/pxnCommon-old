@@ -7,7 +7,11 @@ import com.poixson.pxnCommon.pxnUtils;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 
 
-public class dbPoolConn extends dbPrepared {
+public class dbPoolConn extends dbPrepared
+implements com.poixson.pxnCommon.pxdb.interfaces.dbPoolConn {
+
+	// db connection
+	protected Connection conn;
 
 	// connection id
 	private static int nextId = 0;
@@ -31,17 +35,13 @@ public class dbPoolConn extends dbPrepared {
 	}
 
 
-	public void releaseLock() {
-		Cleanup();
-		inUse = false;
-	}
-
-
 	// get in use
+	@Override
 	public boolean inUse() {
 		return inUse;
 	}
 	// set in use
+	@Override
 	public boolean getUse() {
 		synchronized(inUse) {
 			if(inUse)
@@ -51,6 +51,7 @@ public class dbPoolConn extends dbPrepared {
 		}
 	}
 	// has error / disconnected
+	@Override
 	public boolean hasError() {
 		return (conn == null);
 	}
@@ -99,7 +100,9 @@ public class dbPoolConn extends dbPrepared {
 	 *
 	 * @return time in milliseconds
 	 */
+	@Override
 	public long getLockTime() {
+//TODO: this isn't being used yet
 		if(lockTime < 1)
 			return -1;
 		return pxnUtils.getCurrentMillis() - lockTime;
@@ -111,6 +114,7 @@ public class dbPoolConn extends dbPrepared {
 	 *
 	 * @return Connection
 	 */
+	@Override
 	public Connection getConn() {
 		return conn;
 	}
@@ -128,8 +132,17 @@ public class dbPoolConn extends dbPrepared {
 		nextId++;
 		return id;
 	}
+	@Override
 	public int getId() {
 		return id;
+	}
+
+
+	// release lock
+	@Override
+	public void Release() {
+		Clean();
+		inUse = false;
 	}
 
 

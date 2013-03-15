@@ -9,7 +9,8 @@ import com.poixson.pxnCommon.BukkitPlugin.pxnPlugin;
 import com.poixson.pxnCommon.Logger.pxnLogger;
 
 
-public class dbPool {
+public class dbPool
+implements com.poixson.pxnCommon.pxdb.interfaces.dbPool {
 
 	// plugin
 	protected final pxnPlugin plugin;
@@ -59,17 +60,18 @@ public class dbPool {
 		if(config == null) throw new NullPointerException("dbConfig can't be null!");
 		this.config = config;
 		// force first connection
-		dbPoolConn db = getConnLock();
+		dbPoolConn db = getDB();
 		if(db == null) {
 			plugin.errorMsg("Failed to get a database connection!");
 			log.warning(config.dump());
 			return;
 		}
-		db.releaseLock();
+		db.Release();
 	}
 
 
-	public dbPoolConn getConnLock() {
+	@Override
+	public dbPoolConn getDB() {
 		// plugin disabled
 		if(plugin.okEquals(false)) return null;
 		synchronized(pool) {
